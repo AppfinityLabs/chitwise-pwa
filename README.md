@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChitWise Org Admin PWA
+
+A mobile-first Progressive Web App for Organization Admins to manage chit fund operations.
+
+## Features
+
+- 📱 **Mobile-First PWA** - Install on any device
+- 🔐 **Secure Login** - JWT authentication via existing APIs
+- 📊 **Dashboard** - Stats, recent activity, pending dues
+- 👥 **Members** - Add and manage members
+- 📋 **Groups** - Create and manage chit groups
+- 💰 **Collections** - Record payments with ease
+- 🏆 **Winners** - Track draw results
+- 📈 **Reports** - Analytics and insights
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- ChitWise backend running on port 3002
+
+### Installation
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env.local
+# Edit .env.local with your API URL
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | ChitWise backend API URL | `http://localhost:3002` |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── page.tsx            # Dashboard
+│   ├── login/              # Login page
+│   ├── groups/             # Groups CRUD
+│   ├── members/            # Members CRUD
+│   ├── collections/        # Collections
+│   ├── winners/            # Winners
+│   ├── reports/            # Analytics
+│   ├── more/               # Settings menu
+│   └── settings/           # App settings
+├── components/
+│   └── BottomNav.tsx       # Mobile navigation
+├── context/
+│   └── AuthContext.tsx     # Auth state
+└── lib/
+    └── api.ts              # API client
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## PWA Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Open the app in Chrome/Safari
+2. Click "Add to Home Screen" or install prompt
+3. The app will work offline with cached data
 
-## Deploy on Vercel
+## API Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This PWA connects to the existing ChitWise backend APIs:
+- `/api/auth/*` - Authentication
+- `/api/dashboard` - Dashboard data
+- `/api/chitgroups` - Groups management
+- `/api/members` - Members management
+- `/api/groupmembers` - Subscriptions
+- `/api/collections` - Payment recording
+- `/api/winners` - Draw results
+- `/api/reports` - Analytics
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech Stack
+
+- **Next.js 15** - React framework
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **next-pwa** - PWA support
+- **Lucide Icons** - Icons
+
+## License
+
+Private - ChitWise
