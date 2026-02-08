@@ -225,7 +225,7 @@ export default function ModernDashboardPage() {
       </main>
 
       {/* 4. Modern Floating Action Button (FAB) */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-24 right-6 z-50">
         <Link
           href="/collections/new"
           className="h-14 w-14 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
@@ -233,11 +233,6 @@ export default function ModernDashboardPage() {
           <Plus size={28} />
         </Link>
       </div>
-
-      {/* Optional Bottom Bar for Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full bg-zinc-950/90 backdrop-blur-xl border-t border-white/5 pb-safe">
-        {/* Add standard nav items here (Home, Groups, Profile) */}
-      </nav>
     </div>
   );
 }
