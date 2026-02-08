@@ -19,7 +19,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0f172a",
+  // Updated to match bg-zinc-950
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({
