@@ -90,7 +90,7 @@ export default function ModernLoginPage() {
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center ml-1">
                                 <label className="text-xs font-medium text-zinc-400">Password</label>
-                                <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Forgot?</a>
+                                {/* <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Forgot?</a> */}
                             </div>
                             <div className="relative group">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
