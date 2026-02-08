@@ -3,14 +3,29 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { subscriptionsApi, collectionsApi } from '@/lib/api';
-import { ArrowLeft, Loader2, Search, Check } from 'lucide-react';
+import {
+    ArrowLeft,
+    Loader2,
+    Search,
+    CheckCircle2,
+    X,
+    Smartphone,
+    Banknote,
+    CreditCard,
+    Landmark,
+    Receipt,
+    ArrowRight,
+    Wallet
+} from 'lucide-react';
 import Link from 'next/link';
 
+// --- Utilities ---
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR',
         minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(amount);
 }
 
@@ -26,10 +41,14 @@ function NewCollectionForm() {
     const [success, setSuccess] = useState(false);
     const [search, setSearch] = useState('');
 
+    // Form State
     const [selectedSub, setSelectedSub] = useState<string>(preSelectedSub || '');
     const [amountPaid, setAmountPaid] = useState('');
     const [paymentMode, setPaymentMode] = useState('CASH');
     const [remarks, setRemarks] = useState('');
+
+    // Derived State
+    const selectedSubscription = subscriptions.find((s) => s._id === selectedSub);
 
     useEffect(() => {
         loadData();
@@ -54,12 +73,10 @@ function NewCollectionForm() {
         }
     }
 
-    const selectedSubscription = subscriptions.find((s) => s._id === selectedSub);
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!selectedSub) {
-            setError('Please select a member subscription');
+            setError('Select a member first');
             return;
         }
         setError('');
@@ -75,12 +92,10 @@ function NewCollectionForm() {
                 remarks,
             });
             setSuccess(true);
-            setTimeout(() => {
-                router.push('/collections');
-            }, 1500);
+            // Optional: Auto redirect handled by the Success View component or manually here
+            // setTimeout(() => router.push('/collections'), 2000);
         } catch (err: any) {
-            setError(err.message || 'Failed to record collection');
-        } finally {
+            setError(err.message || 'Transaction failed');
             setSubmitting(false);
         }
     }
@@ -90,181 +105,258 @@ function NewCollectionForm() {
         s.groupId?.groupName?.toLowerCase().includes(search.toLowerCase())
     );
 
+    // --- Success State (Receipt View) ---
     if (success) {
         return (
-            <div className="page flex flex-col items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-[var(--success)]/20 flex items-center justify-center mb-4">
-                    <Check size={40} className="text-[var(--success)]" />
+            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6">
+                <div className="w-full max-w-sm bg-zinc-900 border border-white/5 rounded-3xl p-8 relative overflow-hidden">
+                    {/* Decorative Top */}
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500" />
+
+                    <div className="flex flex-col items-center text-center mb-8">
+                        <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4">
+                            <CheckCircle2 size={32} />
+                        </div>
+                        <h2 className="text-xl font-semibold text-white">Payment Received</h2>
+                        <p className="text-zinc-500 text-sm">{new Date().toLocaleString()}</p>
+                    </div>
+
+                    <div className="space-y-4 border-t border-dashed border-white/10 pt-6">
+                        <div className="flex justify-between">
+                            <span className="text-zinc-500 text-sm">Amount</span>
+                            <span className="text-2xl font-medium text-white">{formatCurrency(Number(amountPaid))}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-zinc-500">Payer</span>
+                            <span className="text-zinc-300">{selectedSubscription?.memberId?.name}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-zinc-500">Method</span>
+                            <span className="text-zinc-300">{paymentMode}</span>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => router.push('/collections')}
+                        className="w-full mt-8 h-12 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors"
+                    >
+                        Done
+                    </button>
                 </div>
-                <h2 className="text-xl font-bold">Collection Recorded!</h2>
-                <p className="text-[var(--text-muted)]">
-                    {formatCurrency(Number(amountPaid))} from {selectedSubscription?.memberId?.name}
-                </p>
             </div>
         );
     }
 
     return (
-        <div className="page">
-            <div className="page-header flex items-center gap-3">
-                <Link href="/collections" className="p-2 -ml-2 rounded-lg">
-                    <ArrowLeft size={24} />
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
+            {/* Header */}
+            <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
+                <Link href="/collections" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                    <ArrowLeft size={22} />
                 </Link>
-                <div>
-                    <h1 className="page-title">Record Collection</h1>
-                    <p className="page-subtitle">Record a new payment</p>
-                </div>
-            </div>
+                <h1 className="text-lg font-medium text-white">Receive Payment</h1>
+            </header>
 
-            <form onSubmit={handleSubmit} className="page-content space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 max-w-lg mx-auto space-y-8">
                 {error && (
-                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                        {error}
+                    <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 animate-in slide-in-from-top-2">
+                        <div className="h-2 w-2 rounded-full bg-rose-500" />
+                        <p className="text-rose-200 text-sm">{error}</p>
                     </div>
                 )}
 
-                <div>
-                    <label className="label">Select Subscription *</label>
-                    <div className="relative mb-2">
-                        <Search
-                            size={20}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-                        />
-                        <input
-                            type="text"
-                            className="input pl-10"
-                            placeholder="Search member or group..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+                {/* 1. Who is paying? (Selector) */}
+                <section>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">From</label>
 
-                    {loading ? (
-                        <div className="flex justify-center py-8">
-                            <div className="loader"></div>
+                    {selectedSubscription ? (
+                        // Selected State (Ticket)
+                        <div className="relative group bg-zinc-900 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(79,70,229,0.1)]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+                                    {selectedSubscription.memberId?.name?.charAt(0)}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-white">{selectedSubscription.memberId?.name}</p>
+                                    <p className="text-xs text-indigo-300">{selectedSubscription.groupId?.groupName}</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedSub('');
+                                    setSearch('');
+                                    setAmountPaid('');
+                                }}
+                                className="p-2 rounded-full hover:bg-white/5 text-zinc-500 hover:text-rose-400 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
                     ) : (
-                        <div className="max-h-48 overflow-y-auto rounded-xl border border-[var(--border)]">
-                            {filteredSubs.length > 0 ? (
-                                filteredSubs.map((sub) => (
-                                    <label
-                                        key={sub._id}
-                                        className={`flex items-center gap-3 p-3 cursor-pointer border-b border-[var(--border)] last:border-b-0 ${selectedSub === sub._id ? 'bg-[var(--primary)]/10' : ''
-                                            }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="subscription"
-                                            value={sub._id}
-                                            checked={selectedSub === sub._id}
-                                            onChange={(e) => {
-                                                setSelectedSub(e.target.value);
-                                                const dueAmount = (sub.groupId?.contributionAmount * sub.units) / sub.collectionFactor;
-                                                setAmountPaid(Math.round(dueAmount).toString());
-                                            }}
-                                            className="w-4 h-4"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate">{sub.memberId?.name}</p>
-                                            <p className="text-sm text-[var(--text-muted)] truncate">
-                                                {sub.groupId?.groupName} • {sub.units} unit(s)
-                                            </p>
-                                        </div>
-                                        {sub.overdueAmount > 0 && (
-                                            <span className="badge error text-xs">
-                                                {formatCurrency(sub.overdueAmount)} due
-                                            </span>
-                                        )}
-                                    </label>
-                                ))
-                            ) : (
-                                <p className="p-4 text-center text-[var(--text-muted)]">No subscriptions found</p>
+                        // Search State
+                        <div className="relative">
+                            <div className="relative group z-10">
+                                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    className="w-full bg-zinc-900 border border-white/5 text-white rounded-xl py-3.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600"
+                                    placeholder="Search name or group..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Dropdown List */}
+                            {search && (
+                                <div className="absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-zinc-900 border border-white/10 rounded-xl shadow-2xl z-20 divide-y divide-white/5">
+                                    {filteredSubs.length > 0 ? (
+                                        filteredSubs.map((sub) => (
+                                            <button
+                                                key={sub._id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSub(sub._id);
+                                                    const dueAmount = (sub.groupId?.contributionAmount * sub.units) / sub.collectionFactor;
+                                                    setAmountPaid(Math.round(dueAmount).toString());
+                                                }}
+                                                className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left"
+                                            >
+                                                <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-zinc-400">
+                                                    {sub.memberId?.name?.charAt(0)}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-zinc-200">{sub.memberId?.name}</p>
+                                                    <p className="text-xs text-zinc-500">{sub.groupId?.groupName}</p>
+                                                </div>
+                                                {sub.overdueAmount > 0 && (
+                                                    <span className="text-[10px] font-bold text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded-full">
+                                                        ₹{sub.overdueAmount} due
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-center text-xs text-zinc-500">No results found</div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     )}
-                </div>
+                </section>
 
-                <div>
-                    <label className="label">Amount (₹) *</label>
-                    <input
-                        type="number"
-                        className="input text-2xl font-bold h-14"
-                        placeholder="0"
-                        value={amountPaid}
-                        onChange={(e) => setAmountPaid(e.target.value)}
-                        required
-                        min="1"
-                    />
-                    {selectedSubscription && (
-                        <p className="text-xs text-[var(--text-muted)] mt-1">
-                            Expected: {formatCurrency(
-                                (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) /
-                                selectedSubscription.collectionFactor
-                            )}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="label">Payment Mode *</label>
-                    <div className="grid grid-cols-4 gap-2">
-                        {['CASH', 'UPI', 'CHEQUE', 'BANK_TRANSFER'].map((mode) => (
-                            <button
-                                key={mode}
-                                type="button"
-                                onClick={() => setPaymentMode(mode)}
-                                className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${paymentMode === mode
-                                        ? 'bg-[var(--primary)] text-white'
-                                        : 'bg-[var(--card)] text-[var(--text-muted)] border border-[var(--border)]'
-                                    }`}
-                            >
-                                {mode === 'BANK_TRANSFER' ? 'Bank' : mode}
-                            </button>
-                        ))}
+                {/* 2. How much? (Big Input) */}
+                <section className="flex flex-col items-center py-4">
+                    <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
+                    <div className="relative w-full max-w-[240px]">
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl font-light text-zinc-600">₹</span>
+                        <input
+                            type="number"
+                            className="w-full bg-transparent text-6xl font-light text-center text-white focus:outline-none placeholder:text-zinc-800"
+                            placeholder="0"
+                            value={amountPaid}
+                            onChange={(e) => setAmountPaid(e.target.value)}
+                            required
+                            min="1"
+                        />
                     </div>
-                </div>
+                    {selectedSubscription && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const due = (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor;
+                                setAmountPaid(Math.round(due).toString());
+                            }}
+                            className="mt-4 text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                        >
+                            Set Full Due: {formatCurrency((selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor)}
+                        </button>
+                    )}
+                </section>
 
-                <div>
-                    <label className="label">Remarks (Optional)</label>
-                    <input
-                        type="text"
-                        className="input"
-                        placeholder="Any notes..."
-                        value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                    />
-                </div>
+                {/* 3. Payment Method (Grid) */}
+                <section>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Method</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <PaymentModeButton
+                            mode="CASH"
+                            current={paymentMode}
+                            set={setPaymentMode}
+                            icon={Banknote}
+                            label="Cash"
+                        />
+                        <PaymentModeButton
+                            mode="UPI"
+                            current={paymentMode}
+                            set={setPaymentMode}
+                            icon={Smartphone}
+                            label="UPI / GPay"
+                        />
+                        <PaymentModeButton
+                            mode="BANK_TRANSFER"
+                            current={paymentMode}
+                            set={setPaymentMode}
+                            icon={Landmark}
+                            label="Bank Transfer"
+                        />
+                        <PaymentModeButton
+                            mode="CHEQUE"
+                            current={paymentMode}
+                            set={setPaymentMode}
+                            icon={Receipt}
+                            label="Cheque"
+                        />
+                    </div>
+                </section>
 
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        disabled={submitting || !selectedSub}
-                        className="btn btn-primary w-full h-12"
-                    >
-                        {submitting ? (
-                            <Loader2 className="animate-spin" size={20} />
-                        ) : (
-                            `Collect ${amountPaid ? formatCurrency(Number(amountPaid)) : ''}`
-                        )}
-                    </button>
-                </div>
+                {/* Submit Action */}
+                <button
+                    type="submit"
+                    disabled={submitting || !selectedSub || !amountPaid}
+                    className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                    {submitting ? (
+                        <Loader2 className="animate-spin" size={24} />
+                    ) : (
+                        <>
+                            <span>Confirm Collection</span>
+                            <ArrowRight size={20} />
+                        </>
+                    )}
+                </button>
             </form>
         </div>
     );
 }
 
+// Sub-component for Payment Buttons
+function PaymentModeButton({ mode, current, set, icon: Icon, label }: any) {
+    const isSelected = current === mode;
+    return (
+        <button
+            type="button"
+            onClick={() => set(mode)}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${isSelected
+                    ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg shadow-white/5 scale-[1.02]'
+                    : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
+                }`}
+        >
+            <Icon size={20} strokeWidth={isSelected ? 2 : 1.5} />
+            <span className="text-xs font-medium">{label}</span>
+        </button>
+    );
+}
+
+// Fallback Loader
 function LoadingFallback() {
     return (
-        <div className="page">
-            <div className="page-header flex items-center gap-3">
-                <div className="loader"></div>
-                <span className="text-[var(--text-muted)]">Loading...</span>
-            </div>
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+            <Loader2 className="animate-spin text-zinc-500" size={32} />
         </div>
     );
 }
 
-export default function NewCollectionPage() {
+export default function ModernNewCollectionPage() {
     return (
         <Suspense fallback={<LoadingFallback />}>
             <NewCollectionForm />
