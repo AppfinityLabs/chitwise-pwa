@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { collectionsApi } from '@/lib/api';
 import { useSubscriptions, invalidateAfterCollectionCreate } from '@/lib/swr';
@@ -49,6 +49,38 @@ function NewCollectionForm() {
     const [paymentMode, setPaymentMode] = useState('CASH');
     const [remarks, setRemarks] = useState('');
 
+    // Period State
+    const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
+    const [periodInfo, setPeriodInfo] = useState<{
+        nextPeriod: number;
+        currentPeriod: number;
+        totalPeriods: number;
+        collectionFactor: number;
+        periods: Array<{ period: number; collected: number; total: number; isComplete: boolean }>;
+    } | null>(null);
+    const [periodLoading, setPeriodLoading] = useState(false);
+
+    // Fetch next available period when subscription is selected
+    useEffect(() => {
+        if (!selectedSub) {
+            setPeriodInfo(null);
+            return;
+        }
+        setPeriodLoading(true);
+        collectionsApi.nextPeriod(selectedSub)
+            .then((data) => {
+                setPeriodInfo(data);
+                setSelectedPeriod(data.nextPeriod);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch period info:', err);
+                // Fallback to group's currentPeriod
+                const sub = subscriptions.find((s) => s._id === selectedSub);
+                setSelectedPeriod(sub?.groupId?.currentPeriod || 1);
+            })
+            .finally(() => setPeriodLoading(false));
+    }, [selectedSub, subscriptions]);
+
     // Derived State
     const selectedSubscription = useMemo(() =>
         subscriptions.find((s) => s._id === selectedSub),
@@ -79,7 +111,7 @@ function NewCollectionForm() {
             const sub = subscriptions.find((s) => s._id === selectedSub);
             await collectionsApi.create({
                 groupMemberId: selectedSub,
-                basePeriodNumber: sub.groupId?.currentPeriod || 1,
+                basePeriodNumber: selectedPeriod,
                 amountPaid: Number(amountPaid),
                 paymentMode,
                 remarks,
@@ -238,7 +270,54 @@ function NewCollectionForm() {
                     )}
                 </section>
 
-                {/* 2. How much? (Big Input) */}
+                {/* 2. Period Selector */}
+                {selectedSubscription && (
+                    <section>
+                        <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Period</label>
+                        {periodLoading ? (
+                            <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>Loading periods...</span>
+                            </div>
+                        ) : periodInfo ? (
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap gap-2">
+                                    {periodInfo.periods.map((p) => (
+                                        <button
+                                            key={p.period}
+                                            type="button"
+                                            disabled={p.isComplete}
+                                            onClick={() => setSelectedPeriod(p.period)}
+                                            className={`relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                                                selectedPeriod === p.period
+                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 scale-105'
+                                                    : p.isComplete
+                                                        ? 'bg-zinc-900/50 text-zinc-600 border border-white/5 cursor-not-allowed line-through'
+                                                        : 'bg-zinc-900 text-zinc-300 border border-white/5 hover:bg-zinc-800 hover:border-indigo-500/30'
+                                            }`}
+                                        >
+                                            P{p.period}
+                                            {p.isComplete && (
+                                                <span className="absolute -top-1 -right-1">
+                                                    <CheckCircle2 size={14} className="text-emerald-500" />
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-zinc-500">
+                                    Period {selectedPeriod} — {periodInfo.periods.find(p => p.period === selectedPeriod)?.collected || 0}/{periodInfo.collectionFactor} collected
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-zinc-900 border border-white/5 rounded-xl px-4 py-3">
+                                <p className="text-sm text-zinc-400">Period {selectedPeriod}</p>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* 3. How much? (Big Input) */}
                 <section className="flex flex-col items-center py-4">
                     <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
                     <div className="relative w-full max-w-[240px]">
@@ -267,7 +346,7 @@ function NewCollectionForm() {
                     )}
                 </section>
 
-                {/* 3. Payment Method (Grid) */}
+                {/* 4. Payment Method (Grid) */}
                 <section>
                     <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Method</label>
                     <div className="grid grid-cols-2 gap-3">

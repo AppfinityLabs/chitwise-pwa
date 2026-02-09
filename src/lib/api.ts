@@ -100,6 +100,14 @@ export const collectionsApi = {
         return api<any[]>(`/api/collections${query}`);
     },
     create: (data: any) => api<any>('/api/collections', { method: 'POST', body: data }),
+    nextPeriod: (groupMemberId: string) =>
+        api<{
+            nextPeriod: number;
+            currentPeriod: number;
+            totalPeriods: number;
+            collectionFactor: number;
+            periods: Array<{ period: number; collected: number; total: number; isComplete: boolean }>;
+        }>(`/api/collections/next-period?groupMemberId=${groupMemberId}`),
 };
 
 // Winners APIs
