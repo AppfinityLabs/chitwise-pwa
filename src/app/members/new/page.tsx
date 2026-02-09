@@ -63,9 +63,9 @@ export default function ModernNewMemberPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
-                <Link href="/members" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
                 <h1 className="text-lg font-medium text-white">New Contact</h1>
             </header>
 
@@ -75,8 +75,8 @@ export default function ModernNewMemberPage() {
                 <div className="flex flex-col items-center mb-8 relative">
                     <div className="relative group cursor-pointer">
                         <div className={`h-28 w-28 rounded-full flex items-center justify-center text-3xl font-bold shadow-2xl transition-all duration-500 ${form.name
-                                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                                : 'bg-zinc-900 border border-white/10 text-zinc-600'
+                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                            : 'bg-zinc-900 border border-white/10 text-zinc-600'
                             }`}>
                             {form.name ? getInitials(form.name) : <User size={40} strokeWidth={1.5} />}
                         </div>

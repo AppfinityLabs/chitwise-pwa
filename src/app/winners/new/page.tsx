@@ -119,9 +119,9 @@ export default function ModernNewWinnerPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
-                <Link href="/winners" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
                 <div>
                     <h1 className="text-lg font-medium text-white">Declare Winner</h1>
                     <p className="text-xs text-zinc-500">Record Draw Result</p>
@@ -206,8 +206,8 @@ export default function ModernNewWinnerPage() {
                                                     className="sr-only"
                                                 />
                                                 <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${selectedMember === sub._id
-                                                        ? 'bg-amber-500 text-black scale-110'
-                                                        : 'bg-zinc-800 text-zinc-500'
+                                                    ? 'bg-amber-500 text-black scale-110'
+                                                    : 'bg-zinc-800 text-zinc-500'
                                                     }`}>
                                                     {selectedMember === sub._id ? <Crown size={14} /> : sub.memberId?.name.charAt(0)}
                                                 </div>
@@ -234,8 +234,8 @@ export default function ModernNewWinnerPage() {
                                     type="button"
                                     onClick={() => setSelectionMethod('LOTTERY')}
                                     className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${selectionMethod === 'LOTTERY'
-                                            ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg'
-                                            : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
+                                        ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg'
+                                        : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
                                         }`}
                                 >
                                     <Sparkles size={20} />
@@ -245,8 +245,8 @@ export default function ModernNewWinnerPage() {
                                     type="button"
                                     onClick={() => setSelectionMethod('AUCTION')}
                                     className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${selectionMethod === 'AUCTION'
-                                            ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg'
-                                            : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
+                                        ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg'
+                                        : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
                                         }`}
                                 >
                                     <Gavel size={20} />

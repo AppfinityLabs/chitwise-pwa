@@ -100,12 +100,12 @@ export default function ModernGroupDetailPage() {
 
             {/* 1. Transparent Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center justify-between">
-                <Link
-                    href="/groups"
+                <button
+                    onClick={() => router.back()}
                     className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
                 >
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
 
                 <div className="flex flex-col items-center">
                     <span className="text-sm font-medium text-white tracking-wide">{group.groupName}</span>
@@ -171,8 +171,8 @@ export default function ModernGroupDetailPage() {
                         <button
                             onClick={() => setActiveTab('members')}
                             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'members'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-500 hover:text-zinc-300'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-500 hover:text-zinc-300'
                                 }`}
                         >
                             Members
@@ -180,8 +180,8 @@ export default function ModernGroupDetailPage() {
                         <button
                             onClick={() => setActiveTab('winners')}
                             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'winners'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-500 hover:text-zinc-300'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-500 hover:text-zinc-300'
                                 }`}
                         >
                             Winners
@@ -199,8 +199,8 @@ export default function ModernGroupDetailPage() {
                                             key={sub._id}
                                             href={`/collections/new?subscription=${sub._id}`}
                                             className={`group flex items-center justify-between p-4 rounded-2xl border transition-all ${isOverdue
-                                                    ? 'bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10'
-                                                    : 'bg-zinc-900/20 border-white/5 hover:bg-zinc-900/40'
+                                                ? 'bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10'
+                                                : 'bg-zinc-900/20 border-white/5 hover:bg-zinc-900/40'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">

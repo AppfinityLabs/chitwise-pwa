@@ -198,9 +198,9 @@ export default function AnimatedDashboardPage() {
           <div className="space-y-3 min-h-[200px]">
             <AnimatePresence mode="wait">
               {activeTab === 'activity' ? (
-                <ActivityList key="activity" items={data?.recentCollections} />
+                <ActivityList key="activity" items={data?.recentCollections || []} />
               ) : (
-                <PendingList key="pending" items={data?.pendingDuesList} />
+                <PendingList key="pending" items={data?.pendingDuesList || []} />
               )}
             </AnimatePresence>
           </div>

@@ -80,9 +80,9 @@ export default function ModernNewGroupPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
-                <Link href="/groups" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
                 <h1 className="text-lg font-medium text-white">Create Asset</h1>
             </header>
 

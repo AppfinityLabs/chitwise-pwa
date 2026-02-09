@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
     Bell,
@@ -16,15 +17,16 @@ import Link from 'next/link';
 
 export default function ModernSettingsPage() {
     const { user } = useAuth();
+    const router = useRouter();
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
 
             {/* Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
-                <Link href="/more" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
                 <h1 className="text-lg font-medium text-white">Settings</h1>
             </header>
 

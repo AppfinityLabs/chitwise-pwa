@@ -151,9 +151,9 @@ function NewCollectionForm() {
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
             {/* Header */}
             <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 px-4 py-4 flex items-center gap-4">
-                <Link href="/collections" className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
+                <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
-                </Link>
+                </button>
                 <h1 className="text-lg font-medium text-white">Receive Payment</h1>
             </header>
 
@@ -337,8 +337,8 @@ function PaymentModeButton({ mode, current, set, icon: Icon, label }: any) {
             type="button"
             onClick={() => set(mode)}
             className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${isSelected
-                    ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg shadow-white/5 scale-[1.02]'
-                    : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
+                ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-lg shadow-white/5 scale-[1.02]'
+                : 'bg-zinc-900 text-zinc-500 border-white/5 hover:bg-zinc-800'
                 }`}
         >
             <Icon size={20} strokeWidth={isSelected ? 2 : 1.5} />

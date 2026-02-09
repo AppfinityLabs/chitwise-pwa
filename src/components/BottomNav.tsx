@@ -14,8 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const navItems = [
     { href: '/', icon: Home, label: 'Home' },
     { href: '/groups', icon: Grid3X3, label: 'Groups' },
-    { href: '/members', icon: Users, label: 'People' },
-    { href: '/collections', icon: Wallet, label: 'History' },
+    { href: '/members', icon: Users, label: 'Members' },
+    { href: '/collections', icon: Wallet, label: 'Collections' },
     { href: '/more', icon: Menu, label: 'Menu' },
 ];
 

@@ -103,9 +103,9 @@ export default function ModernMemberDetailPage() {
 
             {/* Header */}
             <header className="relative z-10 px-4 py-4">
-                <Link href="/members" className="inline-flex p-2 -ml-2 rounded-full hover:bg-white/10 text-zinc-300 transition-colors">
+                <button onClick={() => router.back()} className="inline-flex p-2 -ml-2 rounded-full hover:bg-white/10 text-zinc-300 transition-colors">
                     <ArrowLeft size={24} />
-                </Link>
+                </button>
             </header>
 
             <main className="relative z-10 px-4 space-y-8">
@@ -118,8 +118,8 @@ export default function ModernMemberDetailPage() {
                         </div>
                         {/* Status Indicator */}
                         <div className={`absolute bottom-0 right-0 px-2 py-0.5 rounded-full border-2 border-zinc-950 text-[10px] font-bold uppercase tracking-wider ${member.status === 'ACTIVE'
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-amber-500 text-white'
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-amber-500 text-white'
                             }`}>
                             {member.status}
                         </div>
@@ -141,8 +141,8 @@ export default function ModernMemberDetailPage() {
 
                 {/* 2. Financial Overview Card */}
                 <div className={`relative overflow-hidden rounded-3xl border p-6 flex flex-col items-center gap-1 ${isClean
-                        ? 'bg-emerald-500/5 border-emerald-500/20'
-                        : 'bg-rose-500/5 border-rose-500/20'
+                    ? 'bg-emerald-500/5 border-emerald-500/20'
+                    : 'bg-rose-500/5 border-rose-500/20'
                     }`}>
                     <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">Total Outstanding</span>
                     <h2 className={`text-4xl font-light tracking-tight my-2 ${isClean ? 'text-emerald-400' : 'text-rose-400'
@@ -200,8 +200,8 @@ export default function ModernMemberDetailPage() {
 
                                         {/* Mini Status Bar */}
                                         <div className={`flex items-center justify-between p-3 rounded-xl text-xs font-medium ${hasDues
-                                                ? 'bg-rose-500/10 text-rose-300'
-                                                : 'bg-emerald-500/10 text-emerald-300'
+                                            ? 'bg-rose-500/10 text-rose-300'
+                                            : 'bg-emerald-500/10 text-emerald-300'
                                             }`}>
                                             <div className="flex items-center gap-2">
                                                 {hasDues ? <Clock size={14} /> : <ShieldCheck size={14} />}
