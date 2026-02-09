@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+// SW v2 - image + priority support
 
 // Push notification event - receives push from server
 self.addEventListener('push', function (event) {
@@ -21,20 +22,28 @@ self.addEventListener('push', function (event) {
         tag: data.tag || 'chitwise-notification',
         data: {
             url: data.url || '/',
+            priority: data.priority || 'normal',
             ...data.data,
         },
-        vibrate: [200, 100, 200],
-        actions: [
-            {
-                action: 'open',
-                title: 'Open',
-            },
-            {
-                action: 'dismiss',
-                title: 'Dismiss',
-            },
-        ],
+        vibrate: data.priority === 'urgent' ? [300, 100, 300, 100, 300] : [200, 100, 200],
+        requireInteraction: data.priority === 'urgent',
     };
+
+    // Add image if provided (must be a valid URL, not undefined)
+    if (data.image) {
+        options.image = data.image;
+    }
+
+    options.actions = [
+        {
+            action: 'open',
+            title: 'Open',
+        },
+        {
+            action: 'dismiss',
+            title: 'Dismiss',
+        },
+    ];
 
     event.waitUntil(
         self.registration.showNotification(data.title || 'ChitWise', options)

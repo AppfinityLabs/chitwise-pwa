@@ -8,6 +8,7 @@ import {
     LogOut,
     ChevronRight,
     ShieldCheck,
+    Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,6 +19,7 @@ export default function ModernMorePage() {
     const managementItems = [
         { href: '/winners', icon: Trophy, label: 'Winners & Draws', description: 'Manage lucky draw results' },
         { href: '/reports', icon: BarChart3, label: 'Analytics', description: 'Financial overview & stats' },
+        { href: '/notifications', icon: Bell, label: 'Notifications', description: 'View notification history' },
     ];
 
     const appItems = [

@@ -117,7 +117,7 @@ export default function AnimatedDashboardPage() {
             if (!isSubscribed && isSupported && permission !== 'denied') {
               subscribe();
             } else {
-              router.push('/settings');
+              router.push('/notifications');
             }
           }}
           className="p-2 rounded-full hover:bg-white/5 transition-colors relative"

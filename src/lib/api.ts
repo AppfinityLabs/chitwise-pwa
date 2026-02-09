@@ -141,4 +141,22 @@ export const pushApi = {
         }),
 };
 
+// Notification History APIs (PWA Inbox)
+export const notificationsApi = {
+    history: (page = 1, limit = 20) =>
+        api<{
+            notifications: Array<{
+                _id: string;
+                title: string;
+                body: string;
+                image?: string;
+                url?: string;
+                priority: 'normal' | 'urgent';
+                sentAt: string;
+                targetType: string;
+            }>;
+            pagination: { page: number; limit: number; total: number; pages: number };
+        }>(`/api/notifications/history?page=${page}&limit=${limit}`),
+};
+
 export default api;
