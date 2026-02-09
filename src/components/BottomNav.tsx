@@ -12,11 +12,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
-    { href: '/', icon: Home, label: 'Home' },
+    { href: '/', icon: Home, label: 'Dash' },
     { href: '/groups', icon: Grid3X3, label: 'Groups' },
-    { href: '/members', icon: Users, label: 'Members' },
-    { href: '/collections', icon: Wallet, label: 'Collections' },
-    { href: '/more', icon: Menu, label: 'Menu' },
+    { href: '/members', icon: Users, label: 'Team' },
+    { href: '/collections', icon: Wallet, label: 'Funds' },
+    { href: '/more', icon: Menu, label: 'Me' },
 ];
 
 export default function AnimatedBottomNav() {
