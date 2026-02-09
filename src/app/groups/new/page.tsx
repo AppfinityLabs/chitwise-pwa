@@ -12,7 +12,6 @@ import {
     Users,
     IndianRupee,
     CalendarDays,
-    Percent,
     Layers
 } from 'lucide-react';
 import Link from 'next/link';
@@ -226,9 +225,9 @@ export default function ModernNewGroupPage() {
                                 </div>
 
                                 <div className="flex-1 space-y-1.5">
-                                    <span className="text-xs text-zinc-500">Commission</span>
+                                    <span className="text-xs text-zinc-500">Commission (₹)</span>
                                     <div className="relative">
-                                        <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                                        <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                                         <input
                                             type="number"
                                             name="commissionValue"

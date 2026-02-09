@@ -95,8 +95,24 @@ export default function ModernEnrollMemberPage() {
     // --- Calculations for Summary ---
     const unitVal = Number(units);
     const totalDue = group ? group.contributionAmount * unitVal * group.totalPeriods : 0;
-    const divider = collectionPattern === 'DAILY' ? 30 : collectionPattern === 'WEEKLY' ? 4 : 1;
-    const periodicPayment = group ? (group.contributionAmount * unitVal) / divider : 0;
+
+    // Collection factor must match server-side logic (groupmembers API)
+    // It depends on the relationship between group frequency and member's collection pattern
+    let collectionFactor = 1;
+    if (group) {
+        const baseFreq = group.frequency;
+        if (baseFreq === 'MONTHLY') {
+            if (collectionPattern === 'DAILY') collectionFactor = 30;
+            else if (collectionPattern === 'WEEKLY') collectionFactor = 4;
+            else collectionFactor = 1;
+        } else if (baseFreq === 'WEEKLY') {
+            if (collectionPattern === 'DAILY') collectionFactor = 7;
+            else collectionFactor = 1;
+        } else if (baseFreq === 'DAILY') {
+            collectionFactor = 1;
+        }
+    }
+    const periodicPayment = group ? (group.contributionAmount * unitVal) / collectionFactor : 0;
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
@@ -218,14 +234,21 @@ export default function ModernEnrollMemberPage() {
                         </div>
                     </section>
 
-                    {/* Collection Pattern */}
+                    {/* Collection Pattern - only show patterns equal to or more frequent than the group frequency */}
                     <section className="space-y-3">
                         <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
                             <CalendarClock size={14} />
                             Payment Frequency
                         </label>
                         <div className="bg-zinc-900 p-1 rounded-xl border border-white/5 flex">
-                            {['DAILY', 'WEEKLY', 'MONTHLY'].map((ptn) => (
+                            {(['DAILY', 'WEEKLY', 'MONTHLY'] as const)
+                                .filter((ptn) => {
+                                    // Only show collection patterns that are equal to or more frequent than the group frequency
+                                    const freqOrder = { DAILY: 1, WEEKLY: 2, MONTHLY: 3 };
+                                    const groupFreqLevel = freqOrder[group?.frequency as keyof typeof freqOrder] || 3;
+                                    return freqOrder[ptn] <= groupFreqLevel;
+                                })
+                                .map((ptn) => (
                                 <button
                                     key={ptn}
                                     type="button"
