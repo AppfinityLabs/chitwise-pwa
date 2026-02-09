@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { membersApi } from '@/lib/api';
+import { invalidateAfterMemberCreate } from '@/lib/swr';
 import {
     ArrowLeft,
     Loader2,
@@ -51,6 +52,8 @@ export default function ModernNewMemberPage() {
 
         try {
             await membersApi.create(form);
+            // Update cache so new member appears immediately
+            await invalidateAfterMemberCreate();
             router.push('/members');
         } catch (err: any) {
             setError(err.message || 'Failed to create member');

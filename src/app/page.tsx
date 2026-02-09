@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { dashboardApi } from '@/lib/api';
+import { useDashboard } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
 import {
   Wallet,
@@ -53,28 +53,17 @@ const itemVariants = {
 export default function AnimatedDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // SWR hook for dashboard data - caches and revalidates automatically
+  const { data, isLoading } = useDashboard();
   const [activeTab, setActiveTab] = useState<'activity' | 'pending'>('activity');
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/login');
-    if (user) loadDashboard();
-  }, [user, authLoading]);
-
-  async function loadDashboard() {
-    try {
-      const result = await dashboardApi.get();
-      setData(result);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [user, authLoading, router]);
 
   // --- Loading Skeleton ---
-  if (authLoading || loading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 p-6 flex flex-col gap-6">
         <div className="h-10 w-10 bg-zinc-900 rounded-full animate-pulse" />

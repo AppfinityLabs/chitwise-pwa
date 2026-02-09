@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { membersApi, subscriptionsApi } from '@/lib/api';
+import { useMember, useSubscriptions } from '@/lib/swr';
 import {
     ArrowLeft,
     Phone,
@@ -42,28 +41,11 @@ export default function ModernMemberDetailPage() {
     const router = useRouter();
     const memberId = params.id as string;
 
-    const [member, setMember] = useState<any>(null);
-    const [subscriptions, setSubscriptions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hooks - data is cached and revalidates on focus
+    const { data: member, isLoading: memberLoading } = useMember(memberId);
+    const { data: subscriptions = [], isLoading: subsLoading } = useSubscriptions({ memberId });
 
-    useEffect(() => {
-        loadData();
-    }, [memberId]);
-
-    async function loadData() {
-        try {
-            const [memberData, subsData] = await Promise.all([
-                membersApi.get(memberId),
-                subscriptionsApi.list({ memberId }),
-            ]);
-            setMember(memberData);
-            setSubscriptions(subsData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const loading = memberLoading || subsLoading;
 
     // --- Loading State ---
     if (loading) {

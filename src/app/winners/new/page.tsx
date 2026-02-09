@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { groupsApi, subscriptionsApi, winnersApi } from '@/lib/api';
+import { winnersApi } from '@/lib/api';
+import { useGroups, useSubscriptions, invalidateAfterWinnerCreate } from '@/lib/swr';
 import {
     ArrowLeft,
     Loader2,
@@ -29,27 +30,37 @@ function formatCurrency(amount: number) {
 export default function ModernNewWinnerPage() {
     const router = useRouter();
 
-    // Data State
-    const [groups, setGroups] = useState<any[]>([]);
-    const [members, setMembers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState('');
+    // Data State (SWR)
+    const { data: allGroups = [], isLoading: groupsLoading } = useGroups();
+
+    // Derived groups list (active only)
+    const groups = allGroups.filter((g: any) => g.status === 'ACTIVE');
 
     // Form State
     const [selectedGroup, setSelectedGroup] = useState('');
+
+    // Fetch members only when group is selected
+    const { data: members = [], isLoading: membersLoading } = useSubscriptions({ groupId: selectedGroup });
+
+    // UI State
+    const loading = groupsLoading; // Initial loading only depending on groups
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
     const [selectedMember, setSelectedMember] = useState('');
     const [prizeAmount, setPrizeAmount] = useState<number>(0);
     const [selectionMethod, setSelectionMethod] = useState<'LOTTERY' | 'AUCTION'>('LOTTERY');
     const [bidAmount, setBidAmount] = useState<string>('');
 
     // Derived State
-    const activeGroup = groups.find((g) => g._id === selectedGroup);
-    const activeMember = members.find((m) => m._id === selectedMember);
+    const activeGroup = groups.find((g: any) => g._id === selectedGroup);
+    const activeMember = members.find((m: any) => m._id === selectedMember);
 
+    // Reset member selection when group changes
     useEffect(() => {
-        loadGroups();
-    }, []);
+        setSelectedMember('');
+        setBidAmount('');
+    }, [selectedGroup]);
 
     // Recalculate Prize whenever dependencies change
     useEffect(() => {
@@ -64,29 +75,6 @@ export default function ModernNewWinnerPage() {
         setPrizeAmount(calculatedPrize > 0 ? calculatedPrize : 0);
 
     }, [activeGroup, bidAmount, selectionMethod]);
-
-    async function loadGroups() {
-        try {
-            const data = await groupsApi.list();
-            setGroups(data.filter((g: any) => g.status === 'ACTIVE'));
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleGroupChange(groupId: string) {
-        setSelectedGroup(groupId);
-        setSelectedMember('');
-        setMembers([]);
-        setBidAmount('');
-
-        if (groupId) {
-            const subs = await subscriptionsApi.list({ groupId });
-            setMembers(subs);
-        }
-    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -107,6 +95,8 @@ export default function ModernNewWinnerPage() {
                 selectionMethod,
                 bidValue: selectionMethod === 'AUCTION' ? Number(bidAmount) : undefined,
             });
+            // Update cache so winner appears immediately
+            await invalidateAfterWinnerCreate(selectedGroup);
             router.push('/winners');
         } catch (err: any) {
             setError(err.message || 'Failed to record winner');
@@ -146,7 +136,7 @@ export default function ModernNewWinnerPage() {
                         <select
                             className="w-full appearance-none bg-zinc-900 border border-white/10 text-white rounded-2xl py-4 pl-11 pr-10 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
                             value={selectedGroup}
-                            onChange={(e) => handleGroupChange(e.target.value)}
+                            onChange={(e) => setSelectedGroup(e.target.value)}
                             required
                         >
                             <option value="" disabled>Choose a Chit Group</option>

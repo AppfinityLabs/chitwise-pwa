@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { membersApi } from '@/lib/api';
+import { useState, useMemo } from 'react';
+import { useMembers } from '@/lib/swr';
 import {
     Plus,
     Search,
@@ -15,26 +15,15 @@ import {
 import Link from 'next/link';
 
 export default function ModernMembersPage() {
-    const [members, setMembers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hook - instantly shows cached data, revalidates in background
+    const { data: rawMembers = [], isLoading: loading } = useMembers();
     const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        loadMembers();
-    }, []);
-
-    async function loadMembers() {
-        try {
-            const data = await membersApi.list();
-            // Sort alphabetically by name
-            const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
-            setMembers(sorted);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    // Sort alphabetically by name (memoized)
+    const members = useMemo(() =>
+        [...rawMembers].sort((a: any, b: any) => a.name?.localeCompare(b.name) || 0),
+        [rawMembers]
+    );
 
     // Filter logic
     const filteredMembers = members.filter((m) =>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { groupsApi } from '@/lib/api';
+import { invalidateAfterGroupMutation } from '@/lib/swr';
 import {
     ArrowLeft,
     Loader2,
@@ -68,6 +69,8 @@ export default function ModernNewGroupPage() {
                 totalPeriods: Number(form.totalPeriods),
                 commissionValue: Number(form.commissionValue),
             });
+            // Update cache so new group appears immediately
+            await invalidateAfterGroupMutation();
             router.push('/groups');
         } catch (err: any) {
             setError(err.message || 'Failed to create group');
@@ -83,7 +86,7 @@ export default function ModernNewGroupPage() {
                 <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 transition-colors">
                     <ArrowLeft size={22} />
                 </button>
-                <h1 className="text-lg font-medium text-white">Create Asset</h1>
+                <h1 className="text-lg font-medium text-white">Create Group</h1>
             </header>
 
             <main className="p-4 max-w-lg mx-auto space-y-8">
@@ -267,7 +270,7 @@ export default function ModernNewGroupPage() {
                             {loading ? (
                                 <Loader2 className="animate-spin" size={24} />
                             ) : (
-                                <span className="text-lg">Create Asset</span>
+                                <span className="text-lg">Create Group</span>
                             )}
                         </button>
                     </div>

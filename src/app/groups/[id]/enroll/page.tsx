@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { groupsApi, membersApi, subscriptionsApi } from '@/lib/api';
+import { subscriptionsApi } from '@/lib/api';
+import { useGroup, useMembers, invalidateAfterSubscriptionCreate } from '@/lib/swr';
 import {
     ArrowLeft,
     Loader2,
@@ -31,38 +32,26 @@ export default function ModernEnrollMemberPage() {
     const router = useRouter();
     const groupId = params.id as string;
 
-    // Data State
-    const [group, setGroup] = useState<any>(null);
-    const [members, setMembers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hooks - data is cached and revalidates on focus
+    const { data: group, isLoading: groupLoading } = useGroup(groupId);
+    const { data: members = [], isLoading: membersLoading } = useMembers();
+
+    const loading = groupLoading || membersLoading;
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     // Form State
     const [search, setSearch] = useState('');
     const [selectedMember, setSelectedMember] = useState<any>(null);
-    const [units, setUnits] = useState('1'); // Strings for consistency with select, but could be number
+    const [units, setUnits] = useState('1');
     const [collectionPattern, setCollectionPattern] = useState('MONTHLY');
 
+    // Set default collection pattern when group loads
     useEffect(() => {
-        loadData();
-    }, [groupId]);
-
-    async function loadData() {
-        try {
-            const [groupData, membersData] = await Promise.all([
-                groupsApi.get(groupId),
-                membersApi.list(),
-            ]);
-            setGroup(groupData);
-            setMembers(membersData);
-            setCollectionPattern(groupData.frequency);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
+        if (group?.frequency) {
+            setCollectionPattern(group.frequency);
         }
-    }
+    }, [group?.frequency]);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -80,6 +69,8 @@ export default function ModernEnrollMemberPage() {
                 units: Number(units),
                 collectionPattern,
             });
+            // Invalidate caches so group detail page updates immediately
+            await invalidateAfterSubscriptionCreate(groupId);
             router.push(`/groups/${groupId}`);
         } catch (err: any) {
             setError(err.message || 'Failed to enroll member');

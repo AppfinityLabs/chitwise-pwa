@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { winnersApi, groupsApi } from '@/lib/api';
+import { useState } from 'react';
+import { useWinners, useGroups } from '@/lib/swr';
 import {
     Trophy,
     Plus,
@@ -24,29 +24,12 @@ function formatCurrency(amount: number) {
 }
 
 export default function ModernWinnersPage() {
-    const [winners, setWinners] = useState<any[]>([]);
-    const [groups, setGroups] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hooks - instantly shows cached data, revalidates in background
+    const { data: winners = [], isLoading: winnersLoading } = useWinners();
+    const { data: groups = [], isLoading: groupsLoading } = useGroups();
     const [selectedGroup, setSelectedGroup] = useState('ALL');
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    async function loadData() {
-        try {
-            const [winnersData, groupsData] = await Promise.all([
-                winnersApi.list(),
-                groupsApi.list(),
-            ]);
-            setWinners(winnersData);
-            setGroups(groupsData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const loading = winnersLoading || groupsLoading;
 
     const filteredWinners = selectedGroup === 'ALL'
         ? winners
@@ -79,8 +62,8 @@ export default function ModernWinnersPage() {
                     <button
                         onClick={() => setSelectedGroup('ALL')}
                         className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium transition-all border ${selectedGroup === 'ALL'
-                                ? 'bg-white text-black border-white shadow-lg shadow-white/10'
-                                : 'bg-zinc-900 text-zinc-500 border-white/5 hover:border-white/20'
+                            ? 'bg-white text-black border-white shadow-lg shadow-white/10'
+                            : 'bg-zinc-900 text-zinc-500 border-white/5 hover:border-white/20'
                             }`}
                     >
                         All Groups
@@ -90,8 +73,8 @@ export default function ModernWinnersPage() {
                             key={g._id}
                             onClick={() => setSelectedGroup(g._id)}
                             className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium transition-all border ${selectedGroup === g._id
-                                    ? 'bg-white text-black border-white shadow-lg shadow-white/10'
-                                    : 'bg-zinc-900 text-zinc-500 border-white/5 hover:border-white/20'
+                                ? 'bg-white text-black border-white shadow-lg shadow-white/10'
+                                : 'bg-zinc-900 text-zinc-500 border-white/5 hover:border-white/20'
                                 }`}
                         >
                             {g.groupName}

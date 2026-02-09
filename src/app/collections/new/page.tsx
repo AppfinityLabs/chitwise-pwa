@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { subscriptionsApi, collectionsApi } from '@/lib/api';
+import { collectionsApi } from '@/lib/api';
+import { useSubscriptions, invalidateAfterCollectionCreate } from '@/lib/swr';
 import {
     ArrowLeft,
     Loader2,
@@ -34,8 +35,9 @@ function NewCollectionForm() {
     const searchParams = useSearchParams();
     const preSelectedSub = searchParams.get('subscription');
 
-    const [subscriptions, setSubscriptions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR Hook
+    const { data: subscriptions = [], isLoading: loading } = useSubscriptions();
+
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -48,30 +50,21 @@ function NewCollectionForm() {
     const [remarks, setRemarks] = useState('');
 
     // Derived State
-    const selectedSubscription = subscriptions.find((s) => s._id === selectedSub);
+    const selectedSubscription = useMemo(() =>
+        subscriptions.find((s) => s._id === selectedSub),
+        [subscriptions, selectedSub]
+    );
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    async function loadData() {
-        try {
-            const data = await subscriptionsApi.list();
-            setSubscriptions(data);
-
-            if (preSelectedSub) {
-                const sub = data.find((s: any) => s._id === preSelectedSub);
-                if (sub) {
-                    const dueAmount = (sub.groupId?.contributionAmount * sub.units) / sub.collectionFactor;
-                    setAmountPaid(Math.round(dueAmount).toString());
-                }
+    // Auto-fill amount if pre-selected via URL
+    useMemo(() => {
+        if (preSelectedSub && subscriptions.length > 0 && !amountPaid) {
+            const sub = subscriptions.find((s: any) => s._id === preSelectedSub);
+            if (sub) {
+                const dueAmount = (sub.groupId?.contributionAmount * sub.units) / sub.collectionFactor;
+                setAmountPaid(Math.round(dueAmount).toString());
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
         }
-    }
+    }, [preSelectedSub, subscriptions, amountPaid]);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -91,9 +84,9 @@ function NewCollectionForm() {
                 paymentMode,
                 remarks,
             });
+            // Update dashboard and collections list immediately
+            await invalidateAfterCollectionCreate(sub?.groupId?._id);
             setSuccess(true);
-            // Optional: Auto redirect handled by the Success View component or manually here
-            // setTimeout(() => router.push('/collections'), 2000);
         } catch (err: any) {
             setError(err.message || 'Transaction failed');
             setSubmitting(false);

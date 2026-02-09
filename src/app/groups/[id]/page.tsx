@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { groupsApi, subscriptionsApi, winnersApi } from '@/lib/api';
+import { useGroup, useSubscriptions, useWinners } from '@/lib/swr';
 import {
     ArrowLeft,
     Users,
@@ -31,34 +31,14 @@ export default function ModernGroupDetailPage() {
     const router = useRouter();
     const groupId = params.id as string;
 
-    const [group, setGroup] = useState<any>(null);
-    const [members, setMembers] = useState<any[]>([]);
-    const [winners, setWinners] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hooks - data is cached and revalidated automatically
+    const { data: group, isLoading: groupLoading } = useGroup(groupId);
+    const { data: members = [], isLoading: membersLoading } = useSubscriptions({ groupId });
+    const { data: winners = [], isLoading: winnersLoading } = useWinners({ groupId });
+
     const [activeTab, setActiveTab] = useState<'members' | 'winners'>('members');
 
-    useEffect(() => {
-        loadData();
-    }, [groupId]);
-
-    async function loadData() {
-        try {
-            // In a real app, Promise.allSettled might be safer, 
-            // but strictly following your logic:
-            const [groupData, membersData, winnersData] = await Promise.all([
-                groupsApi.get(groupId),
-                subscriptionsApi.list({ groupId }),
-                winnersApi.list({ groupId }),
-            ]);
-            setGroup(groupData);
-            setMembers(membersData);
-            setWinners(winnersData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const loading = groupLoading || membersLoading || winnersLoading;
 
     // --- Loading Skeleton ---
     if (loading) {

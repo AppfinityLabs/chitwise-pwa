@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { reportsApi } from '@/lib/api';
+import { useReports } from '@/lib/swr';
 import {
     ArrowLeft,
     BarChart3,
@@ -39,23 +38,8 @@ function getPaymentIcon(mode: string) {
 
 export default function ModernReportsPage() {
     const router = useRouter();
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        loadReports();
-    }, []);
-
-    async function loadReports() {
-        try {
-            const result = await reportsApi.get();
-            setData(result);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    // SWR hook - instantly shows cached data, revalidates in background
+    const { data, isLoading: loading } = useReports();
 
     const totalCollections = data?.trends?.reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
 

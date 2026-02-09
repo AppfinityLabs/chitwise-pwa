@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collectionsApi } from '@/lib/api';
+import { useState, useMemo } from 'react';
+import { useCollections } from '@/lib/swr';
 import {
     Plus,
     Search,
@@ -43,28 +43,17 @@ function getPaymentIcon(mode: string) {
 }
 
 export default function ModernCollectionsPage() {
-    const [collections, setCollections] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // SWR hook - instantly shows cached data, revalidates in background
+    const { data: rawCollections = [], isLoading: loading } = useCollections();
     const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        loadCollections();
-    }, []);
-
-    async function loadCollections() {
-        try {
-            const data = await collectionsApi.list();
-            // Ensure data is sorted by date descending (newest first)
-            const sorted = data.sort((a: any, b: any) =>
-                new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime()
-            );
-            setCollections(sorted);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    // Sort by date descending (memoized)
+    const collections = useMemo(() =>
+        [...rawCollections].sort((a: any, b: any) =>
+            new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime()
+        ),
+        [rawCollections]
+    );
 
     const filteredCollections = collections.filter((c) =>
         c.memberId?.name?.toLowerCase().includes(search.toLowerCase()) ||

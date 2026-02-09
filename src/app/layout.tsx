@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { SWRProvider } from "@/context/SWRProvider";
 import BottomNav from "@/components/BottomNav";
 
 export const metadata: Metadata = {
@@ -34,10 +35,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          {children}
-          <BottomNav />
-        </AuthProvider>
+        <SWRProvider>
+          <AuthProvider>
+            {children}
+            <BottomNav />
+          </AuthProvider>
+        </SWRProvider>
       </body>
     </html>
   );

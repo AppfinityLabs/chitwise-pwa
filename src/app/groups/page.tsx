@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { groupsApi } from '@/lib/api';
+import { useState } from 'react';
+import { useGroups } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Search, 
-  ChevronRight, 
-  LayoutGrid, 
-  Users, 
+import {
+  Plus,
+  Search,
+  ChevronRight,
+  LayoutGrid,
+  Users,
   TrendingUp,
-  MoreHorizontal 
+  MoreHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,24 +26,9 @@ function formatCurrency(amount: number) {
 
 export default function ModernGroupsPage() {
   const router = useRouter();
-  const [groups, setGroups] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SWR hook - instantly shows cached data, revalidates in background
+  const { data: groups = [], isLoading: loading } = useGroups();
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    loadGroups();
-  }, []);
-
-  async function loadGroups() {
-    try {
-      const data = await groupsApi.list();
-      setGroups(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const filteredGroups = groups.filter((g) =>
     g.groupName.toLowerCase().includes(search.toLowerCase())
@@ -91,7 +76,7 @@ export default function ModernGroupsPage() {
             {filteredGroups.map((group) => {
               // Calculate progress percentage
               const progress = Math.min(
-                100, 
+                100,
                 Math.round((group.currentPeriod / group.totalPeriods) * 100)
               );
 
@@ -103,11 +88,10 @@ export default function ModernGroupsPage() {
                 >
                   {/* Status Indicator (Top Right) */}
                   <div className="absolute top-5 right-5 flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${
-                      group.status === 'ACTIVE' 
-                        ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' 
+                    <span className={`h-2 w-2 rounded-full ${group.status === 'ACTIVE'
+                        ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
                         : 'bg-amber-500'
-                    }`} />
+                      }`} />
                   </div>
 
                   {/* Card Content */}
@@ -148,12 +132,12 @@ export default function ModernGroupsPage() {
                           Period {group.currentPeriod}<span className="text-zinc-600">/{group.totalPeriods}</span>
                         </span>
                       </div>
-                      
+
                       {/* Custom Progress Bar */}
                       <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-indigo-500/80 rounded-full" 
-                          style={{ width: `${progress}%` }} 
+                        <div
+                          className="h-full bg-indigo-500/80 rounded-full"
+                          style={{ width: `${progress}%` }}
                         />
                       </div>
                     </div>
@@ -171,11 +155,11 @@ export default function ModernGroupsPage() {
             <p className="text-zinc-600 text-sm mt-1 max-w-[200px]">
               Try adjusting your search or create a new group.
             </p>
-            <button 
-                onClick={() => setSearch('')}
-                className="mt-4 text-indigo-400 text-sm font-medium hover:text-indigo-300"
+            <button
+              onClick={() => setSearch('')}
+              className="mt-4 text-indigo-400 text-sm font-medium hover:text-indigo-300"
             >
-                Clear Search
+              Clear Search
             </button>
           </div>
         )}
@@ -183,8 +167,8 @@ export default function ModernGroupsPage() {
 
       {/* Floating Action Button (Consistent with Dashboard) */}
       <div className="fixed bottom-24 right-6 z-40">
-        <Link 
-          href="/groups/new" 
+        <Link
+          href="/groups/new"
           className="h-14 w-14 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
         >
           <Plus size={28} />
