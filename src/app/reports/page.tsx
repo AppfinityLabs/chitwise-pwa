@@ -55,11 +55,11 @@ export default function ModernReportsPage() {
         }
     }
 
-    const totalCollections = data?.trends?.reduce((sum: number, t: any) => sum + t.total, 0) || 0;
+    const totalCollections = data?.trends?.reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
 
     // Calculate max value for scaling bars
     const maxTrendValue = data?.trends?.length
-        ? Math.max(...data.trends.map((t: any) => t.total))
+        ? Math.max(...data.trends.map((t: any) => t.amount))
         : 0;
 
     return (
@@ -111,15 +111,15 @@ export default function ModernReportsPage() {
                             <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-5 space-y-5">
                                 {data?.trends && data.trends.length > 0 ? (
                                     data.trends.map((trend: any, idx: number) => {
-                                        const percentage = maxTrendValue ? (trend.total / maxTrendValue) * 100 : 0;
+                                        const percentage = maxTrendValue ? (trend.amount / maxTrendValue) * 100 : 0;
                                         return (
                                             <div key={idx} className="group">
                                                 <div className="flex justify-between text-xs mb-2">
                                                     <span className="font-medium text-zinc-400 group-hover:text-white transition-colors">
-                                                        {trend._id}
+                                                        {trend.name}
                                                     </span>
                                                     <span className="font-bold text-zinc-200">
-                                                        {formatCurrency(trend.total)}
+                                                        {formatCurrency(trend.amount)}
                                                     </span>
                                                 </div>
                                                 {/* The Bar */}
@@ -151,16 +151,17 @@ export default function ModernReportsPage() {
                                         <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-white/10 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-white/5">
-                                                    {getPaymentIcon(stat._id)}
+                                                    {getPaymentIcon(stat.name)}
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-zinc-200 uppercase tracking-wide">
-                                                        {stat._id || 'Unknown'}
+                                                        {stat.name || 'Unknown'}
                                                     </p>
-                                                    <p className="text-[10px] text-zinc-500">{stat.count} transactions</p>
+                                                    {/* Count is not available in API response */}
+                                                    {/* <p className="text-[10px] text-zinc-500">{stat.count} transactions</p> */}
                                                 </div>
                                             </div>
-                                            <p className="font-medium text-emerald-400">{formatCurrency(stat.total)}</p>
+                                            <p className="font-medium text-emerald-400">{formatCurrency(stat.value)}</p>
                                         </div>
                                     ))
                                 ) : (
@@ -183,18 +184,18 @@ export default function ModernReportsPage() {
                                             <div className="flex items-center gap-3">
                                                 {/* Rank Badge */}
                                                 <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-400 text-black' :
-                                                        idx === 1 ? 'bg-zinc-400 text-black' :
-                                                            idx === 2 ? 'bg-orange-400 text-black' :
-                                                                'bg-zinc-800 text-zinc-500'
+                                                    idx === 1 ? 'bg-zinc-400 text-black' :
+                                                        idx === 2 ? 'bg-orange-400 text-black' :
+                                                            'bg-zinc-800 text-zinc-500'
                                                     }`}>
                                                     {idx + 1}
                                                 </div>
                                                 <span className="text-sm font-medium text-zinc-300 truncate max-w-[140px]">
-                                                    {gp._id?.groupName || 'Unknown'}
+                                                    {gp.name || 'Unknown'}
                                                 </span>
                                             </div>
                                             <span className="text-sm font-medium text-white">
-                                                {formatCurrency(gp.totalCollected)}
+                                                {formatCurrency(gp.value)}
                                             </span>
                                         </div>
                                     ))
