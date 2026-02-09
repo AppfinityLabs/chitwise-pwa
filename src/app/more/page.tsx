@@ -7,10 +7,7 @@ import {
     Settings,
     LogOut,
     ChevronRight,
-    User,
     ShieldCheck,
-    HelpCircle,
-    FileText
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -25,7 +22,6 @@ export default function ModernMorePage() {
 
     const appItems = [
         { href: '/settings', icon: Settings, label: 'Settings', description: 'Notifications & preferences' },
-        { href: '/support', icon: HelpCircle, label: 'Help & Support', description: 'Contact ChitWise team' },
     ];
 
     // Helper for avatar initials
