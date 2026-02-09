@@ -12,7 +12,8 @@ import {
     Mail,
     MapPin,
     Sparkles,
-    Camera
+    Camera,
+    KeyRound,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -23,14 +24,17 @@ export default function ModernNewMemberPage() {
     const [form, setForm] = useState({
         name: '',
         phone: '',
+        pin: '',
         email: '',
         address: '',
     });
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
         const { name, value } = e.target;
-        // Limit phone to numbers only (optional UX improvement)
+        // Limit phone and pin to numbers only
         if (name === 'phone' && !/^\d*$/.test(value)) return;
+        if (name === 'pin' && !/^\d*$/.test(value)) return;
+        if (name === 'pin' && value.length > 4) return;
         setForm(prev => ({ ...prev, [name]: value }));
     }
 
@@ -145,6 +149,29 @@ export default function ModernNewMemberPage() {
                                 maxLength={10}
                             />
                         </div>
+                    </div>
+
+                    {/* PIN Input */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-zinc-400 ml-1">Login PIN <span className="text-rose-500">*</span></label>
+                        <div className="relative group">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-400 transition-colors">
+                                <KeyRound size={18} />
+                            </div>
+                            <input
+                                type="text"
+                                name="pin"
+                                inputMode="numeric"
+                                className="w-full bg-zinc-900 border border-white/5 text-white rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all placeholder:text-zinc-600 shadow-inner tracking-[0.5em] text-center font-mono text-lg"
+                                placeholder="••••"
+                                value={form.pin}
+                                onChange={handleChange}
+                                required
+                                maxLength={4}
+                                minLength={4}
+                            />
+                        </div>
+                        <p className="text-[10px] text-zinc-600 ml-1">4-digit PIN for member app login</p>
                     </div>
 
                     {/* Email Input */}
