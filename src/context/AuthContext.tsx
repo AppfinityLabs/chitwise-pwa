@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
         } catch {
             setUser(null);
+            localStorage.removeItem('token'); // Clear invalid token
             if (pathname !== '/login') {
                 router.replace('/login');
             }
@@ -47,6 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function login(email: string, password: string) {
         const response = await authApi.login(email, password);
+        if (response.token) {
+            localStorage.setItem('token', response.token);
+        }
         setUser(response.user);
         router.replace('/');
     }
@@ -56,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await authApi.logout();
         } finally {
             setUser(null);
+            localStorage.removeItem('token');
             router.replace('/login');
         }
     }

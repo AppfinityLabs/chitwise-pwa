@@ -9,10 +9,13 @@ interface ApiOptions {
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     const { method = 'GET', body, headers = {} } = options;
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
     const config: RequestInit = {
         method,
         headers: {
             'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
             ...headers,
         },
         credentials: 'include', // Include cookies for auth
