@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { SWRProvider } from "@/context/SWRProvider";
 import BottomNav from "@/components/BottomNav";
+import NotificationBanner from "@/components/NotificationBanner";
 
 export const metadata: Metadata = {
   title: "ChitWise Org",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="antialiased">
         <SWRProvider>
           <AuthProvider>
+            <NotificationBanner />
             {children}
             <BottomNav />
           </AuthProvider>
@@ -45,3 +47,4 @@ export default function RootLayout({
     </html>
   );
 }
+
