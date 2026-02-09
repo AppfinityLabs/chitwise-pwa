@@ -125,4 +125,20 @@ export const reportsApi = {
         }>('/api/reports'),
 };
 
+// Push Notification APIs
+export const pushApi = {
+    getVapidKey: () =>
+        api<{ publicKey: string; configured: boolean }>('/api/push/vapid-key'),
+    subscribe: (subscription: PushSubscriptionJSON, userAgent?: string) =>
+        api<{ success: boolean; message: string; id: string }>('/api/push/subscribe', {
+            method: 'POST',
+            body: { subscription, userAgent },
+        }),
+    unsubscribe: (endpoint: string) =>
+        api<{ success: boolean; message: string }>('/api/push/subscribe', {
+            method: 'DELETE',
+            body: { endpoint },
+        }),
+};
+
 export default api;

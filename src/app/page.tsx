@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { usePush } from '@/context/PushContext';
 import { useDashboard } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
 import {
   Wallet,
   ArrowDownLeft,
   Plus,
-  Bell
+  Bell,
+  X,
+  Download
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,10 +56,26 @@ const itemVariants = {
 export default function AnimatedDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const {
+    isSupported,
+    isSubscribed,
+    permission,
+    isLoading: pushLoading,
+    showInstallPrompt,
+    subscribe,
+    dismissBanner,
+    bannerDismissed,
+  } = usePush();
 
   // SWR hook for dashboard data - caches and revalidates automatically
   const { data, isLoading } = useDashboard();
   const [activeTab, setActiveTab] = useState<'activity' | 'pending'>('activity');
+
+  // Show notification banner when: supported, not subscribed, not dismissed, permission not denied
+  const showNotificationBanner =
+    user &&
+    !bannerDismissed &&
+    ((isSupported && !isSubscribed && permission !== 'denied') || showInstallPrompt);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace('/login');
@@ -93,11 +112,73 @@ export default function AnimatedDashboardPage() {
           </div>
           <span className="text-sm font-medium text-zinc-400">Overview</span>
         </div>
-        <button className="p-2 rounded-full hover:bg-white/5 transition-colors relative">
-          <Bell size={20} className="text-zinc-400" />
-          <span className="absolute top-2 right-2 h-2 w-2 bg-rose-500 rounded-full border-2 border-zinc-950"></span>
+        <button
+          onClick={() => {
+            if (!isSubscribed && isSupported && permission !== 'denied') {
+              subscribe();
+            } else {
+              router.push('/settings');
+            }
+          }}
+          className="p-2 rounded-full hover:bg-white/5 transition-colors relative"
+        >
+          <Bell size={20} className={isSubscribed ? 'text-indigo-400' : 'text-zinc-400'} />
+          {!isSubscribed && isSupported && permission !== 'denied' && (
+            <span className="absolute top-2 right-2 h-2 w-2 bg-rose-500 rounded-full border-2 border-zinc-950"></span>
+          )}
         </button>
       </header>
+
+      {/* Push Notification Banner */}
+      <AnimatePresence>
+        {showNotificationBanner && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mx-4 mt-2"
+          >
+            <div className="relative bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/20 rounded-2xl p-4">
+              <button
+                onClick={dismissBanner}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 text-zinc-400"
+              >
+                <X size={14} />
+              </button>
+              {showInstallPrompt ? (
+                <div className="flex items-start gap-3 pr-6">
+                  <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
+                    <Download size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-200">Install ChitWise</p>
+                    <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+                      Tap <span className="text-zinc-200">Share</span> → <span className="text-zinc-200">Add to Home Screen</span> to receive push notifications
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3 pr-6">
+                  <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
+                    <Bell size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-200">Enable Notifications</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">Stay updated with collections, dues & announcements</p>
+                    <button
+                      onClick={subscribe}
+                      disabled={pushLoading}
+                      className="mt-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-full transition-colors disabled:opacity-50"
+                    >
+                      {pushLoading ? 'Enabling...' : 'Enable'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.main
         variants={containerVariants}

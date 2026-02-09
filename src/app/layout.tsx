@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { SWRProvider } from "@/context/SWRProvider";
+import { PushProvider } from "@/context/PushContext";
 import BottomNav from "@/components/BottomNav";
-import NotificationBanner from "@/components/NotificationBanner";
 
 export const metadata: Metadata = {
   title: "ChitWise Org",
@@ -38,13 +38,13 @@ export default function RootLayout({
       <body className="antialiased">
         <SWRProvider>
           <AuthProvider>
-            <NotificationBanner />
-            {children}
-            <BottomNav />
+            <PushProvider>
+              {children}
+              <BottomNav />
+            </PushProvider>
           </AuthProvider>
         </SWRProvider>
       </body>
     </html>
   );
 }
-

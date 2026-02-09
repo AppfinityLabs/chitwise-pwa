@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
+import { usePush } from '@/context/PushContext';
 import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
@@ -18,6 +19,17 @@ import Link from 'next/link';
 export default function ModernSettingsPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const {
+        isSupported,
+        isSubscribed,
+        permission,
+        isLoading,
+        isIOSDevice,
+        isInstalled,
+        showInstallPrompt,
+        subscribe,
+        unsubscribe,
+    } = usePush();
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
@@ -55,10 +67,21 @@ export default function ModernSettingsPage() {
                         </div>
 
                         {/* Notifications */}
-                        <SettingsItem
-                            icon={Bell}
-                            label="Notifications"
-                            badge="Soon"
+                        <NotificationToggle
+                            isSupported={isSupported}
+                            isSubscribed={isSubscribed}
+                            permission={permission}
+                            isLoading={isLoading}
+                            isIOSDevice={isIOSDevice}
+                            isInstalled={isInstalled}
+                            showInstallPrompt={showInstallPrompt}
+                            onToggle={async () => {
+                                if (isSubscribed) {
+                                    await unsubscribe();
+                                } else {
+                                    await subscribe();
+                                }
+                            }}
                         />
 
                         {/* Language */}
@@ -140,4 +163,111 @@ function SettingsItem({ icon: Icon, label, value, badge, isLink }: any) {
     );
 
     return Content;
+}
+
+// --- Notification Toggle Component ---
+function NotificationToggle({
+    isSupported,
+    isSubscribed,
+    permission,
+    isLoading,
+    isIOSDevice,
+    isInstalled,
+    showInstallPrompt,
+    onToggle,
+}: {
+    isSupported: boolean;
+    isSubscribed: boolean;
+    permission: NotificationPermission | 'unsupported';
+    isLoading: boolean;
+    isIOSDevice: boolean;
+    isInstalled: boolean;
+    showInstallPrompt: boolean;
+    onToggle: () => void;
+}) {
+    // iOS not installed — show install instruction
+    if (showInstallPrompt) {
+        return (
+            <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                        <Bell size={18} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-zinc-300">Notifications</p>
+                        <p className="text-[11px] text-amber-400/80 leading-tight max-w-[200px]">
+                            Install this app to Home Screen to enable notifications
+                        </p>
+                    </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">
+                    Install
+                </span>
+            </div>
+        );
+    }
+
+    // Permission denied
+    if (permission === 'denied') {
+        return (
+            <div className="flex items-center justify-between p-4 opacity-60">
+                <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400">
+                        <Bell size={18} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-zinc-400">Notifications</p>
+                        <p className="text-[11px] text-red-400/70 leading-tight max-w-[200px]">
+                            Blocked — enable in browser settings
+                        </p>
+                    </div>
+                </div>
+                <Lock size={16} className="text-zinc-600" />
+            </div>
+        );
+    }
+
+    // Not supported
+    if (!isSupported) {
+        return (
+            <div className="flex items-center justify-between p-4 opacity-50">
+                <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-500">
+                        <Bell size={18} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-zinc-500">Notifications</p>
+                        <p className="text-[11px] text-zinc-600">Not supported in this browser</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Normal toggle
+    return (
+        <button
+            onClick={onToggle}
+            disabled={isLoading}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors disabled:opacity-50"
+        >
+            <div className="flex items-center gap-3">
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${isSubscribed ? 'bg-indigo-500/10 text-indigo-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                    <Bell size={18} />
+                </div>
+                <div className="text-left">
+                    <p className={`text-sm font-medium ${isSubscribed ? 'text-zinc-200' : 'text-zinc-300'}`}>
+                        Notifications
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                        {isLoading ? 'Processing...' : isSubscribed ? 'Push notifications enabled' : 'Tap to enable push notifications'}
+                    </p>
+                </div>
+            </div>
+            {/* Toggle Switch */}
+            <div className={`w-11 h-6 rounded-full relative shadow-inner shadow-black/20 transition-colors ${isSubscribed ? 'bg-indigo-600' : 'bg-zinc-700'}`}>
+                <div className={`absolute top-1 h-4 w-4 bg-white rounded-full shadow-sm transition-all ${isSubscribed ? 'right-1' : 'left-1'}`} />
+            </div>
+        </button>
+    );
 }

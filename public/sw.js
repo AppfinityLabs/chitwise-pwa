@@ -1,84 +1,87 @@
-// ChitWise Push Notification Service Worker
+/// <reference lib="webworker" />
 
-self.addEventListener('push', function(event) {
-  console.log('[Service Worker] Push Received:', event);
+// Push notification event - receives push from server
+self.addEventListener('push', function (event) {
+    if (!event.data) return;
 
-  let data = {
-    title: 'ChitWise',
-    body: 'You have a new notification',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    url: '/'
-  };
-
-  try {
-    if (event.data) {
-      data = { ...data, ...event.data.json() };
+    let data;
+    try {
+        data = event.data.json();
+    } catch (e) {
+        data = {
+            title: 'ChitWise',
+            body: event.data.text(),
+        };
     }
-  } catch (e) {
-    console.error('[Service Worker] Error parsing push data:', e);
-  }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || '/icons/icon-192.png',
-    badge: data.badge || '/icons/icon-192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/',
-      dateOfArrival: Date.now(),
-      primaryKey: data.tag || 'notification'
-    },
-    tag: data.tag || 'default',
-    renotify: true,
-    requireInteraction: false,
-    actions: [
-      { action: 'open', title: 'Open' },
-      { action: 'close', title: 'Dismiss' }
-    ]
-  };
+    const options = {
+        body: data.body || '',
+        icon: data.icon || '/icons/icon-192.png',
+        badge: data.badge || '/icons/icon-192.png',
+        tag: data.tag || 'chitwise-notification',
+        data: {
+            url: data.url || '/',
+            ...data.data,
+        },
+        vibrate: [200, 100, 200],
+        actions: [
+            {
+                action: 'open',
+                title: 'Open',
+            },
+            {
+                action: 'dismiss',
+                title: 'Dismiss',
+            },
+        ],
+    };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'ChitWise', options)
+    );
 });
 
-self.addEventListener('notificationclick', function(event) {
-  console.log('[Service Worker] Notification clicked:', event);
-  event.notification.close();
+// Notification click - open the app at the right URL
+self.addEventListener('notificationclick', function (event) {
+    event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+    if (event.action === 'dismiss') return;
 
-  if (event.action === 'close') {
-    return;
-  }
+    const targetUrl = event.notification.data?.url || '/';
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(function(clientList) {
-        // Check if a window is already open
-        for (let i = 0; i < clientList.length; i++) {
-          const client = clientList[i];
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            client.navigate(urlToOpen);
-            return client.focus();
-          }
-        }
-        // Open new window if none exists
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
-  );
+    event.waitUntil(
+        clients
+            .matchAll({ type: 'window', includeUncontrolled: true })
+            .then(function (clientList) {
+                // If the app is already open, focus it and navigate
+                for (const client of clientList) {
+                    if ('focus' in client) {
+                        client.focus();
+                        client.navigate(targetUrl);
+                        return;
+                    }
+                }
+                // Otherwise, open a new window
+                return clients.openWindow(targetUrl);
+            })
+    );
 });
 
-self.addEventListener('notificationclose', function(event) {
-  console.log('[Service Worker] Notification closed:', event);
-});
-
-// Handle push subscription change
-self.addEventListener('pushsubscriptionchange', function(event) {
-  console.log('[Service Worker] Push subscription changed');
-  // The subscription needs to be renewed - the app should handle this
-  // by re-subscribing when it next becomes active
+// Handle subscription change (e.g., browser refreshes the subscription)
+self.addEventListener('pushsubscriptionchange', function (event) {
+    event.waitUntil(
+        self.registration.pushManager
+            .subscribe(event.oldSubscription.options)
+            .then(function (subscription) {
+                // Re-register with the server
+                return fetch('/api/push/resubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        oldEndpoint: event.oldSubscription.endpoint,
+                        newSubscription: subscription.toJSON(),
+                    }),
+                });
+            })
+    );
 });
