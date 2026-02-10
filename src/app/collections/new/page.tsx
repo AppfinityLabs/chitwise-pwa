@@ -16,7 +16,8 @@ import {
     Landmark,
     Receipt,
     ArrowRight,
-    Wallet
+    Wallet,
+    Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -270,8 +271,40 @@ function NewCollectionForm() {
                     )}
                 </section>
 
-                {/* 2. Period Selector */}
-                {selectedSubscription && (
+                {/* 2. Period Selector / Not Started Banner */}
+                {selectedSubscription && (() => {
+                    const groupData = selectedSubscription.groupId;
+                    const groupNotStarted = groupData?.startDate && new Date(groupData.startDate) > new Date();
+
+                    if (groupNotStarted) {
+                        return (
+                            <section className="relative overflow-hidden rounded-2xl bg-amber-500/5 border border-amber-500/20 p-6">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -mr-6 -mt-6 pointer-events-none" />
+                                <div className="relative z-10 flex flex-col items-center text-center gap-3">
+                                    <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                        <Calendar size={24} className="text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-medium text-amber-200">Group Not Started Yet</p>
+                                        <p className="text-sm text-zinc-400 mt-1">
+                                            Collections begin on{' '}
+                                            <span className="text-amber-300 font-medium">
+                                                {new Date(groupData.startDate).toLocaleDateString('en-IN', {
+                                                    day: 'numeric', month: 'long', year: 'numeric'
+                                                })}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        );
+                    }
+
+                    return null;
+                })()}
+
+                {/* Period selector - only when group has started */}
+                {selectedSubscription && !(selectedSubscription.groupId?.startDate && new Date(selectedSubscription.groupId.startDate) > new Date()) && (
                     <section>
                         <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Period</label>
                         {periodLoading ? (
@@ -317,85 +350,90 @@ function NewCollectionForm() {
                     </section>
                 )}
 
-                {/* 3. How much? (Big Input) */}
-                <section className="flex flex-col items-center py-4">
-                    <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
-                    <div className="relative w-full max-w-[240px]">
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl font-light text-zinc-600">₹</span>
-                        <input
-                            type="number"
-                            className="w-full bg-transparent text-6xl font-light text-center text-white focus:outline-none placeholder:text-zinc-800"
-                            placeholder="0"
-                            value={amountPaid}
-                            onChange={(e) => setAmountPaid(e.target.value)}
-                            required
-                            min="1"
-                        />
-                    </div>
-                    {selectedSubscription && (
+                {/* Amount, Method, Submit - only when group has started */}
+                {!(selectedSubscription?.groupId?.startDate && new Date(selectedSubscription.groupId.startDate) > new Date()) && (
+                    <>
+                        {/* 3. How much? (Big Input) */}
+                        <section className="flex flex-col items-center py-4">
+                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
+                            <div className="relative w-full max-w-[240px]">
+                                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl font-light text-zinc-600">₹</span>
+                                <input
+                                    type="number"
+                                    className="w-full bg-transparent text-6xl font-light text-center text-white focus:outline-none placeholder:text-zinc-800"
+                                    placeholder="0"
+                                    value={amountPaid}
+                                    onChange={(e) => setAmountPaid(e.target.value)}
+                                    required
+                                    min="1"
+                                />
+                            </div>
+                            {selectedSubscription && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const due = (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor;
+                                        setAmountPaid(Math.round(due).toString());
+                                    }}
+                                    className="mt-4 text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                                >
+                                    Set Full Due: {formatCurrency((selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor)}
+                                </button>
+                            )}
+                        </section>
+
+                        {/* 4. Payment Method (Grid) */}
+                        <section>
+                            <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Method</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <PaymentModeButton
+                                    mode="CASH"
+                                    current={paymentMode}
+                                    set={setPaymentMode}
+                                    icon={Banknote}
+                                    label="Cash"
+                                />
+                                <PaymentModeButton
+                                    mode="UPI"
+                                    current={paymentMode}
+                                    set={setPaymentMode}
+                                    icon={Smartphone}
+                                    label="UPI / GPay"
+                                />
+                                <PaymentModeButton
+                                    mode="BANK_TRANSFER"
+                                    current={paymentMode}
+                                    set={setPaymentMode}
+                                    icon={Landmark}
+                                    label="Bank Transfer"
+                                />
+                                <PaymentModeButton
+                                    mode="CHEQUE"
+                                    current={paymentMode}
+                                    set={setPaymentMode}
+                                    icon={Receipt}
+                                    label="Cheque"
+                                />
+                            </div>
+                        </section>
+
+                        {/* Submit Action */}
                         <button
-                            type="button"
-                            onClick={() => {
-                                const due = (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor;
-                                setAmountPaid(Math.round(due).toString());
-                            }}
-                            className="mt-4 text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                            type="submit"
+                            disabled={submitting || !selectedSub || !amountPaid}
+                            className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                         >
-                            Set Full Due: {formatCurrency((selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor)}
+                            {submitting ? (
+                                <Loader2 className="animate-spin" size={24} />
+                            ) : (
+                                <>
+                                    <span>Confirm Collection</span>
+                                    <ArrowRight size={20} />
+                                </>
+                            )}
                         </button>
-                    )}
-                </section>
-
-                {/* 4. Payment Method (Grid) */}
-                <section>
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Method</label>
-                    <div className="grid grid-cols-2 gap-3">
-                        <PaymentModeButton
-                            mode="CASH"
-                            current={paymentMode}
-                            set={setPaymentMode}
-                            icon={Banknote}
-                            label="Cash"
-                        />
-                        <PaymentModeButton
-                            mode="UPI"
-                            current={paymentMode}
-                            set={setPaymentMode}
-                            icon={Smartphone}
-                            label="UPI / GPay"
-                        />
-                        <PaymentModeButton
-                            mode="BANK_TRANSFER"
-                            current={paymentMode}
-                            set={setPaymentMode}
-                            icon={Landmark}
-                            label="Bank Transfer"
-                        />
-                        <PaymentModeButton
-                            mode="CHEQUE"
-                            current={paymentMode}
-                            set={setPaymentMode}
-                            icon={Receipt}
-                            label="Cheque"
-                        />
-                    </div>
-                </section>
-
-                {/* Submit Action */}
-                <button
-                    type="submit"
-                    disabled={submitting || !selectedSub || !amountPaid}
-                    className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                    {submitting ? (
-                        <Loader2 className="animate-spin" size={24} />
-                    ) : (
-                        <>
-                            <span>Confirm Collection</span>
-                            <ArrowRight size={20} />
-                        </>
-                    )}
-                </button>
+                    </>
+                )}
             </form>
         </div>
     );
