@@ -18,7 +18,6 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
             ...(token && { Authorization: `Bearer ${token}` }),
             ...headers,
         },
-        credentials: 'include', // Include cookies for auth
     };
 
     if (body) {
