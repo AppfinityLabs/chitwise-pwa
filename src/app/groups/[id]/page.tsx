@@ -72,8 +72,9 @@ export default function ModernGroupDetailPage() {
     }
 
     const potValue = group.contributionAmount * group.totalUnits;
+    const hasStarted = group.startDate ? new Date(group.startDate) <= new Date() : true;
     // Calculate progress for the progress bar
-    const progressPercent = Math.min(100, Math.round((group.currentPeriod / group.totalPeriods) * 100));
+    const progressPercent = hasStarted ? Math.min(100, Math.round((group.currentPeriod / group.totalPeriods) * 100)) : 0;
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-24">
@@ -118,7 +119,7 @@ export default function ModernGroupDetailPage() {
                     {/* Progress Strip */}
                     <div className="mt-6 pt-4 border-t border-white/5">
                         <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                            <span>Period {group.currentPeriod}</span>
+                            <span>{hasStarted ? `Period ${group.currentPeriod}` : `Starts ${new Date(group.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}</span>
                             <span>Target: {group.totalPeriods}</span>
                         </div>
                         <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
@@ -174,6 +175,10 @@ export default function ModernGroupDetailPage() {
                             members.length > 0 ? (
                                 members.map((sub) => {
                                     const isOverdue = sub.overdueAmount > 0;
+                                    const groupData = sub.groupId || group;
+                                    const hasStarted = groupData?.startDate ? new Date(groupData.startDate) <= new Date() : true;
+                                    const isPaid = hasStarted && !isOverdue;
+                                    const isNotStarted = !hasStarted;
                                     return (
                                         <Link
                                             key={sub._id}
@@ -203,6 +208,11 @@ export default function ModernGroupDetailPage() {
                                                             <p className="text-sm font-medium text-rose-400">{formatCurrency(sub.overdueAmount)}</p>
                                                             <p className="text-[10px] text-rose-500/80">Overdue</p>
                                                         </>
+                                                    ) : isNotStarted ? (
+                                                        <div className="flex items-center gap-1 text-zinc-400">
+                                                            <Calendar size={14} />
+                                                            <span className="text-xs font-medium">Starts {new Date(groupData.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                                                        </div>
                                                     ) : (
                                                         <div className="flex items-center gap-1 text-emerald-500/80">
                                                             <CheckCircle2 size={16} />
