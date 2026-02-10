@@ -66,6 +66,7 @@ export const groupsApi = {
     get: (id: string) => api<any>(`/api/chitgroups/${id}`),
     create: (data: any) => api<any>('/api/chitgroups', { method: 'POST', body: data }),
     update: (id: string, data: any) => api<any>(`/api/chitgroups/${id}`, { method: 'PUT', body: data }),
+    delete: (id: string) => api<any>(`/api/chitgroups/${id}`, { method: 'DELETE' }),
 };
 
 // Members APIs
@@ -74,6 +75,7 @@ export const membersApi = {
     get: (id: string) => api<any>(`/api/members/${id}`),
     create: (data: any) => api<any>('/api/members', { method: 'POST', body: data }),
     update: (id: string, data: any) => api<any>(`/api/members/${id}`, { method: 'PUT', body: data }),
+    delete: (id: string) => api<any>(`/api/members/${id}`, { method: 'DELETE' }),
 };
 
 // Group Members (Subscriptions) APIs
@@ -98,7 +100,10 @@ export const collectionsApi = {
         const query = params.toString() ? `?${params.toString()}` : '';
         return api<any[]>(`/api/collections${query}`);
     },
+    get: (id: string) => api<any>(`/api/collections/${id}`),
     create: (data: any) => api<any>('/api/collections', { method: 'POST', body: data }),
+    update: (id: string, data: any) => api<any>(`/api/collections/${id}`, { method: 'PUT', body: data }),
+    delete: (id: string) => api<any>(`/api/collections/${id}`, { method: 'DELETE' }),
     nextPeriod: (groupMemberId: string) =>
         api<{
             nextPeriod: number;
@@ -117,7 +122,10 @@ export const winnersApi = {
         const query = params.toString() ? `?${params.toString()}` : '';
         return api<any[]>(`/api/winners${query}`);
     },
+    get: (id: string) => api<any>(`/api/winners/${id}`),
     create: (data: any) => api<any>('/api/winners', { method: 'POST', body: data }),
+    update: (id: string, data: any) => api<any>(`/api/winners/${id}`, { method: 'PUT', body: data }),
+    delete: (id: string) => api<any>(`/api/winners/${id}`, { method: 'DELETE' }),
 };
 
 // Reports API

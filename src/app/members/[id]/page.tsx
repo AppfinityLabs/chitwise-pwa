@@ -1,7 +1,8 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useMember, useSubscriptions } from '@/lib/swr';
+import { useMember, useSubscriptions, invalidateAfterMemberCreate } from '@/lib/swr';
+import { membersApi } from '@/lib/api';
 import {
     ArrowLeft,
     Phone,
@@ -13,7 +14,9 @@ import {
     AlertCircle,
     Clock,
     LayoutGrid,
-    UserX
+    UserX,
+    Pencil,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -118,7 +121,26 @@ export default function ModernMemberDetailPage() {
                         {member.address && (
                             <ActionCircle href={`https://maps.google.com/?q=${member.address}`} icon={MapPin} label="Map" target="_blank" />
                         )}
+                        <ActionCircle href={`/members/${memberId}/edit`} icon={Pencil} label="Edit" />
                     </div>
+
+                    {/* Deactivate button */}
+                    <button
+                        onClick={async () => {
+                            if (!confirm('Deactivate this member? They will no longer be able to log in.')) return;
+                            try {
+                                await membersApi.delete(memberId);
+                                await invalidateAfterMemberCreate();
+                                router.push('/members');
+                            } catch (err: any) {
+                                alert(err.message || 'Failed to deactivate');
+                            }
+                        }}
+                        className="mt-4 text-xs text-zinc-600 hover:text-rose-400 transition-colors flex items-center gap-1"
+                    >
+                        <Trash2 size={12} />
+                        Deactivate Member
+                    </button>
                 </div>
 
                 {/* 2. Financial Overview Card */}

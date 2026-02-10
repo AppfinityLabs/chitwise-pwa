@@ -93,9 +93,10 @@ export default function ModernWinnersPage() {
                 ) : filteredWinners.length > 0 ? (
                     <div className="grid gap-3">
                         {filteredWinners.map((winner) => (
-                            <div
+                            <Link
+                                href={`/winners/${winner._id}`}
                                 key={winner._id}
-                                className="relative group overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 p-4 transition-all active:scale-[0.98]"
+                                className="relative group overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 p-4 transition-all active:scale-[0.98] block"
                             >
                                 {/* Subtle Golden Gradient Background on Hover */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -143,7 +144,7 @@ export default function ModernWinnersPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 ) : (

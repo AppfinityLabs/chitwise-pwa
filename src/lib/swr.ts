@@ -47,6 +47,7 @@ export const CACHE_KEYS = {
         if (!filters?.groupId) return base;
         return `${base}?groupId=${filters.groupId}`;
     },
+    WINNER: (id: string) => `/winners/${id}`,
     REPORTS: '/reports',
 };
 
@@ -128,6 +129,14 @@ export function useWinners(filters?: { groupId?: string }) {
     return useSWR(
         CACHE_KEYS.WINNERS(filters),
         () => winnersApi.list(filters),
+        swrConfig
+    );
+}
+
+export function useWinner(id: string | undefined) {
+    return useSWR(
+        id ? CACHE_KEYS.WINNER(id) : null,
+        () => winnersApi.get(id!),
         swrConfig
     );
 }
