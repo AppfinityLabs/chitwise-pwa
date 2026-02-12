@@ -12,7 +12,8 @@ import {
     ChevronRight,
     AlertCircle,
     CheckCircle2,
-    Wallet
+    Wallet,
+    Clock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -174,27 +175,32 @@ export default function ModernGroupDetailPage() {
                         {activeTab === 'members' && (
                             members.length > 0 ? (
                                 members.map((sub) => {
-                                    const isOverdue = sub.overdueAmount > 0;
                                     const groupData = sub.groupId || group;
                                     const hasStarted = groupData?.startDate ? new Date(groupData.startDate) <= new Date() : true;
-                                    const isPaid = hasStarted && !isOverdue;
                                     const isNotStarted = !hasStarted;
+                                    // Use paymentStatus from API for accurate status display
+                                    const status = sub.paymentStatus || (sub.overdueAmount > 0 ? 'OVERDUE' : (hasStarted ? 'ALL_CLEAR' : 'NOT_STARTED'));
+                                    const isOverdue = status === 'OVERDUE';
+                                    const isDue = status === 'DUE';
+                                    const isPaid = status === 'ALL_CLEAR';
                                     return (
                                         <Link
                                             key={sub._id}
                                             href={`/collections/new?subscription=${sub._id}`}
                                             className={`group flex items-center justify-between p-4 rounded-2xl border transition-all ${isOverdue
                                                 ? 'bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10'
-                                                : 'bg-zinc-900/20 border-white/5 hover:bg-zinc-900/40'
+                                                : isDue
+                                                    ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                                                    : 'bg-zinc-900/20 border-white/5 hover:bg-zinc-900/40'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${isOverdue ? 'bg-rose-500/10 text-rose-400' : 'bg-zinc-800 text-zinc-400'
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${isOverdue ? 'bg-rose-500/10 text-rose-400' : isDue ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-400'
                                                     }`}>
                                                     {sub.memberId?.name?.charAt(0) || 'U'}
                                                 </div>
                                                 <div>
-                                                    <p className={`text-sm font-medium ${isOverdue ? 'text-rose-200' : 'text-zinc-200'}`}>
+                                                    <p className={`text-sm font-medium ${isOverdue ? 'text-rose-200' : isDue ? 'text-amber-200' : 'text-zinc-200'}`}>
                                                         {sub.memberId?.name || 'Unknown'}
                                                     </p>
                                                     <p className="text-xs text-zinc-500">{sub.units} unit(s)</p>
@@ -212,6 +218,11 @@ export default function ModernGroupDetailPage() {
                                                         <div className="flex items-center gap-1 text-zinc-400">
                                                             <Calendar size={14} />
                                                             <span className="text-xs font-medium">Starts {new Date(groupData.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                                                        </div>
+                                                    ) : isDue ? (
+                                                        <div className="flex items-center gap-1 text-amber-400">
+                                                            <Clock size={16} />
+                                                            <span className="text-xs font-medium">Due</span>
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-1 text-emerald-500/80">
