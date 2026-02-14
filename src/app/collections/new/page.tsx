@@ -58,6 +58,12 @@ function NewCollectionForm() {
         totalPeriods: number;
         collectionFactor: number;
         periods: Array<{ period: number; collected: number; total: number; isComplete: boolean }>;
+        // Member-centric fields for sub-period collection patterns
+        nextMemberInstallment?: number;
+        totalMemberInstallments?: number;
+        completedMemberInstallments?: number;
+        currentMemberInstallment?: number;
+        collectionPattern?: string;
     } | null>(null);
     const [periodLoading, setPeriodLoading] = useState(false);
 
@@ -314,33 +320,62 @@ function NewCollectionForm() {
                             </div>
                         ) : periodInfo ? (
                             <div className="space-y-3">
-                                <div className="flex flex-wrap gap-2">
-                                    {periodInfo.periods.map((p) => (
-                                        <button
-                                            key={p.period}
-                                            type="button"
-                                            disabled={p.isComplete}
-                                            onClick={() => setSelectedPeriod(p.period)}
-                                            className={`relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                                                selectedPeriod === p.period
-                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 scale-105'
-                                                    : p.isComplete
-                                                        ? 'bg-zinc-900/50 text-zinc-600 border border-white/5 cursor-not-allowed line-through'
-                                                        : 'bg-zinc-900 text-zinc-300 border border-white/5 hover:bg-zinc-800 hover:border-indigo-500/30'
-                                            }`}
-                                        >
-                                            P{p.period}
-                                            {p.isComplete && (
-                                                <span className="absolute -top-1 -right-1">
-                                                    <CheckCircle2 size={14} className="text-emerald-500" />
-                                                </span>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-zinc-500">
-                                    Period {selectedPeriod} — {periodInfo.periods.find(p => p.period === selectedPeriod)?.collected || 0}/{periodInfo.collectionFactor} collected
-                                </p>
+                                {/* Sub-period members (daily/weekly in monthly group): show member installment view */}
+                                {periodInfo.collectionFactor > 1 ? (
+                                    <>
+                                        <div className="flex items-center gap-3">
+                                            <div className="px-5 py-3 rounded-xl text-sm font-medium bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                                                P{periodInfo.nextMemberInstallment}
+                                            </div>
+                                            <div className="text-xs text-zinc-400">
+                                                of {periodInfo.totalMemberInstallments} installments
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-zinc-500">
+                                            Installment {periodInfo.nextMemberInstallment} — {periodInfo.completedMemberInstallments}/{periodInfo.totalMemberInstallments} collected
+                                            <span className="text-zinc-600 ml-1">
+                                                ({periodInfo.collectionPattern?.toLowerCase()} in {selectedSubscription.groupId?.frequency?.toLowerCase()} group)
+                                            </span>
+                                        </p>
+                                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all"
+                                                style={{ width: `${((periodInfo.completedMemberInstallments || 0) / (periodInfo.totalMemberInstallments || 1)) * 100}%` }}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Regular members (pattern = group frequency): show group-period buttons */}
+                                        <div className="flex flex-wrap gap-2">
+                                            {periodInfo.periods.map((p) => (
+                                                <button
+                                                    key={p.period}
+                                                    type="button"
+                                                    disabled={p.isComplete}
+                                                    onClick={() => setSelectedPeriod(p.period)}
+                                                    className={`relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                                                        selectedPeriod === p.period
+                                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 scale-105'
+                                                            : p.isComplete
+                                                                ? 'bg-zinc-900/50 text-zinc-600 border border-white/5 cursor-not-allowed line-through'
+                                                                : 'bg-zinc-900 text-zinc-300 border border-white/5 hover:bg-zinc-800 hover:border-indigo-500/30'
+                                                    }`}
+                                                >
+                                                    P{p.period}
+                                                    {p.isComplete && (
+                                                        <span className="absolute -top-1 -right-1">
+                                                            <CheckCircle2 size={14} className="text-emerald-500" />
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-zinc-500">
+                                            Period {selectedPeriod} — {periodInfo.periods.find(p => p.period === selectedPeriod)?.collected || 0}/{periodInfo.collectionFactor} collected
+                                        </p>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <div className="bg-zinc-900 border border-white/5 rounded-xl px-4 py-3">
