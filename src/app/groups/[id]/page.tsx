@@ -13,7 +13,8 @@ import {
     AlertCircle,
     CheckCircle2,
     Wallet,
-    Clock
+    Clock,
+    Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -213,6 +214,17 @@ export default function ModernGroupDetailPage() {
                                                         <>
                                                             <p className="text-sm font-medium text-rose-400">{formatCurrency(sub.overdueAmount)}</p>
                                                             <p className="text-[10px] text-rose-500/80">Overdue</p>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    router.push(`/collections/new?subscription=${sub._id}&settleOverdue=true`);
+                                                                }}
+                                                                className="mt-1 flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                                                            >
+                                                                <Zap size={10} />
+                                                                <span className="text-[10px] font-medium">Settle</span>
+                                                            </button>
                                                         </>
                                                     ) : isNotStarted ? (
                                                         <div className="flex items-center gap-1 text-zinc-400">

@@ -17,7 +17,9 @@ import {
     Receipt,
     ArrowRight,
     Wallet,
-    Calendar
+    Calendar,
+    AlertTriangle,
+    Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +37,7 @@ function NewCollectionForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const preSelectedSub = searchParams.get('subscription');
+    const settleOverdueParam = searchParams.get('settleOverdue') === 'true';
 
     // SWR Hook
     const { data: subscriptions = [], isLoading: loading } = useSubscriptions();
@@ -50,6 +53,12 @@ function NewCollectionForm() {
     const [paymentMode, setPaymentMode] = useState('CASH');
     const [remarks, setRemarks] = useState('');
 
+    // Settle Overdue State
+    const [settleMode, setSettleMode] = useState(settleOverdueParam);
+    const [selectedOverdue, setSelectedOverdue] = useState<Set<string>>(new Set());
+    const [settlingOverdue, setSettlingOverdue] = useState(false);
+    const [settleResult, setSettleResult] = useState<{ count: number; totalSettled: number } | null>(null);
+
     // Period State
     const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
     const [periodInfo, setPeriodInfo] = useState<{
@@ -64,6 +73,10 @@ function NewCollectionForm() {
         completedMemberInstallments?: number;
         currentMemberInstallment?: number;
         collectionPattern?: string;
+        // Overdue details
+        overdueInstallments?: Array<{ basePeriodNumber: number; collectionSequence: number; amountDue: number }>;
+        overdueTotal?: number;
+        overdueCount?: number;
     } | null>(null);
     const [periodLoading, setPeriodLoading] = useState(false);
 
@@ -78,6 +91,20 @@ function NewCollectionForm() {
             .then((data) => {
                 setPeriodInfo(data);
                 setSelectedPeriod(data.nextPeriod);
+                // Auto-select all overdue installments
+                if (data.overdueInstallments && data.overdueInstallments.length > 0) {
+                    const keys = new Set(data.overdueInstallments.map(
+                        (i: any) => `${i.basePeriodNumber}.${i.collectionSequence}`
+                    ));
+                    setSelectedOverdue(keys);
+                    // Enter settle mode automatically if URL param or if there are overdue installments
+                    if (settleOverdueParam) {
+                        setSettleMode(true);
+                    }
+                } else {
+                    setSelectedOverdue(new Set());
+                    setSettleMode(false);
+                }
             })
             .catch((err) => {
                 console.error('Failed to fetch period info:', err);
@@ -132,6 +159,38 @@ function NewCollectionForm() {
         }
     }
 
+    async function handleSettleOverdue() {
+        if (!selectedSub || selectedOverdue.size === 0) {
+            setError('No overdue installments selected');
+            return;
+        }
+        setError('');
+        setSettlingOverdue(true);
+
+        try {
+            // Build installments array from selected keys ("basePeriod.sequence")
+            const installments = Array.from(selectedOverdue).map(key => {
+                const [basePeriodNumber] = key.split('.').map(Number);
+                return { basePeriodNumber };
+            });
+
+            const result = await collectionsApi.bulkCreate({
+                groupMemberId: selectedSub,
+                paymentMode,
+                remarks: remarks || undefined,
+                installments,
+            });
+
+            const sub = subscriptions.find((s) => s._id === selectedSub);
+            await invalidateAfterCollectionCreate(sub?.groupId?._id);
+            setSettleResult({ count: result.count, totalSettled: result.totalSettled });
+            setSuccess(true);
+        } catch (err: any) {
+            setError(err.message || 'Settlement failed');
+            setSettlingOverdue(false);
+        }
+    }
+
     const filteredSubs = subscriptions.filter((s) =>
         s.memberId?.name?.toLowerCase().includes(search.toLowerCase()) ||
         s.groupId?.groupName?.toLowerCase().includes(search.toLowerCase())
@@ -139,25 +198,36 @@ function NewCollectionForm() {
 
     // --- Success State (Receipt View) ---
     if (success) {
+        const isBulkSettle = settleResult !== null;
         return (
             <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-sm bg-zinc-900 border border-white/5 rounded-3xl p-8 relative overflow-hidden">
                     {/* Decorative Top */}
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500" />
+                    <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${isBulkSettle ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-emerald-500'}`} />
 
                     <div className="flex flex-col items-center text-center mb-8">
-                        <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4">
+                        <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${isBulkSettle ? 'bg-emerald-500/10 text-emerald-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                             <CheckCircle2 size={32} />
                         </div>
-                        <h2 className="text-xl font-semibold text-white">Payment Received</h2>
+                        <h2 className="text-xl font-semibold text-white">
+                            {isBulkSettle ? 'Overdue Settled' : 'Payment Received'}
+                        </h2>
                         <p className="text-zinc-500 text-sm">{new Date().toLocaleString()}</p>
                     </div>
 
                     <div className="space-y-4 border-t border-dashed border-white/10 pt-6">
                         <div className="flex justify-between">
                             <span className="text-zinc-500 text-sm">Amount</span>
-                            <span className="text-2xl font-medium text-white">{formatCurrency(Number(amountPaid))}</span>
+                            <span className="text-2xl font-medium text-white">
+                                {formatCurrency(isBulkSettle ? settleResult.totalSettled : Number(amountPaid))}
+                            </span>
                         </div>
+                        {isBulkSettle && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-zinc-500">Installments</span>
+                                <span className="text-emerald-400 font-medium">{settleResult.count} settled</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-sm">
                             <span className="text-zinc-500">Payer</span>
                             <span className="text-zinc-300">{selectedSubscription?.memberId?.name}</span>
@@ -388,36 +458,152 @@ function NewCollectionForm() {
                 {/* Amount, Method, Submit - only when group has started */}
                 {!(selectedSubscription?.groupId?.startDate && new Date(selectedSubscription.groupId.startDate) > new Date()) && (
                     <>
-                        {/* 3. How much? (Big Input) */}
-                        <section className="flex flex-col items-center py-4">
-                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
-                            <div className="relative w-full max-w-[240px]">
-                                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl font-light text-zinc-600">₹</span>
-                                <input
-                                    type="number"
-                                    className="w-full bg-transparent text-6xl font-light text-center text-white focus:outline-none placeholder:text-zinc-800"
-                                    placeholder="0"
-                                    value={amountPaid}
-                                    onChange={(e) => setAmountPaid(e.target.value)}
-                                    required
-                                    min="1"
-                                />
-                            </div>
-                            {selectedSubscription && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const due = (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor;
-                                        setAmountPaid(Math.round(due).toString());
-                                    }}
-                                    className="mt-4 text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
-                                >
-                                    Set Full Due: {formatCurrency((selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor)}
-                                </button>
-                            )}
-                        </section>
+                        {/* ── Settle Overdue Banner / Toggle ─────────────────── */}
+                        {periodInfo && (periodInfo.overdueCount ?? 0) > 0 && (
+                            <section className="relative overflow-hidden rounded-2xl bg-rose-500/5 border border-rose-500/20 p-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="h-10 w-10 shrink-0 rounded-full bg-rose-500/10 flex items-center justify-center">
+                                        <AlertTriangle size={20} className="text-rose-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div>
+                                                <p className="text-sm font-medium text-rose-200">
+                                                    {periodInfo.overdueCount} overdue installment{(periodInfo.overdueCount ?? 0) > 1 ? 's' : ''}
+                                                </p>
+                                                <p className="text-xs text-rose-400/70 mt-0.5">
+                                                    Total: {formatCurrency(periodInfo.overdueTotal ?? 0)}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSettleMode(!settleMode)}
+                                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                                    settleMode
+                                                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
+                                                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
+                                                }`}
+                                            >
+                                                <Zap size={12} />
+                                                {settleMode ? 'Settling...' : 'Settle'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        {/* 4. Payment Method (Grid) */}
+                                {/* Expanded: overdue installment list with toggles */}
+                                {settleMode && periodInfo.overdueInstallments && (
+                                    <div className="mt-4 space-y-2 border-t border-rose-500/10 pt-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Select installments</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (selectedOverdue.size === periodInfo.overdueInstallments!.length) {
+                                                        setSelectedOverdue(new Set());
+                                                    } else {
+                                                        setSelectedOverdue(new Set(
+                                                            periodInfo.overdueInstallments!.map(i => `${i.basePeriodNumber}.${i.collectionSequence}`)
+                                                        ));
+                                                    }
+                                                }}
+                                                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                                            >
+                                                {selectedOverdue.size === periodInfo.overdueInstallments.length ? 'Deselect All' : 'Select All'}
+                                            </button>
+                                        </div>
+                                        {periodInfo.overdueInstallments.map((inst) => {
+                                            const key = `${inst.basePeriodNumber}.${inst.collectionSequence}`;
+                                            const isChecked = selectedOverdue.has(key);
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const next = new Set(selectedOverdue);
+                                                        if (isChecked) next.delete(key);
+                                                        else next.add(key);
+                                                        setSelectedOverdue(next);
+                                                    }}
+                                                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
+                                                        isChecked
+                                                            ? 'bg-rose-500/10 border-rose-500/30'
+                                                            : 'bg-zinc-900/50 border-white/5 opacity-60'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                            isChecked ? 'bg-rose-500 border-rose-500' : 'border-zinc-600'
+                                                        }`}>
+                                                            {isChecked && <CheckCircle2 size={12} className="text-white" />}
+                                                        </div>
+                                                        <span className="text-sm text-zinc-300">
+                                                            P{inst.basePeriodNumber}
+                                                            {periodInfo.collectionFactor > 1 && <span className="text-zinc-500">.{inst.collectionSequence}</span>}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-sm font-medium text-zinc-300">
+                                                        {formatCurrency(inst.amountDue)}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+
+                                        {/* Selected total */}
+                                        {selectedOverdue.size > 0 && (
+                                            <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                                                <span className="text-xs text-zinc-500">
+                                                    {selectedOverdue.size} of {periodInfo.overdueInstallments.length} selected
+                                                </span>
+                                                <span className="text-lg font-semibold text-rose-300">
+                                                    {formatCurrency(
+                                                        periodInfo.overdueInstallments
+                                                            .filter(i => selectedOverdue.has(`${i.basePeriodNumber}.${i.collectionSequence}`))
+                                                            .reduce((sum, i) => sum + i.amountDue, 0)
+                                                    )}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {/* ── Single Collection Flow (hidden when settle mode is active) ── */}
+                        {!settleMode && (
+                            <>
+                                {/* 3. How much? (Big Input) */}
+                                <section className="flex flex-col items-center py-4">
+                                    <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Amount</span>
+                                    <div className="relative w-full max-w-[240px]">
+                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl font-light text-zinc-600">₹</span>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-transparent text-6xl font-light text-center text-white focus:outline-none placeholder:text-zinc-800"
+                                            placeholder="0"
+                                            value={amountPaid}
+                                            onChange={(e) => setAmountPaid(e.target.value)}
+                                            required={!settleMode}
+                                            min="1"
+                                        />
+                                    </div>
+                                    {selectedSubscription && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const due = (selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor;
+                                                setAmountPaid(Math.round(due).toString());
+                                            }}
+                                            className="mt-4 text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                                        >
+                                            Set Full Due: {formatCurrency((selectedSubscription.groupId?.contributionAmount * selectedSubscription.units) / selectedSubscription.collectionFactor)}
+                                        </button>
+                                    )}
+                                </section>
+                            </>
+                        )}
+
+                        {/* 4. Payment Method (Grid) — shown in both modes */}
                         <section>
                             <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 block">Method</label>
                             <div className="grid grid-cols-2 gap-3">
@@ -452,21 +638,45 @@ function NewCollectionForm() {
                             </div>
                         </section>
 
-                        {/* Submit Action */}
-                        <button
-                            type="submit"
-                            disabled={submitting || !selectedSub || !amountPaid}
-                            className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                        >
-                            {submitting ? (
-                                <Loader2 className="animate-spin" size={24} />
-                            ) : (
-                                <>
-                                    <span>Confirm Collection</span>
-                                    <ArrowRight size={20} />
-                                </>
-                            )}
-                        </button>
+                        {/* Submit Action — changes based on mode */}
+                        {settleMode ? (
+                            <button
+                                type="button"
+                                onClick={handleSettleOverdue}
+                                disabled={settlingOverdue || selectedOverdue.size === 0}
+                                className="w-full h-14 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(225,29,72,0.3)] hover:shadow-[0_4px_25px_rgba(225,29,72,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                {settlingOverdue ? (
+                                    <Loader2 className="animate-spin" size={24} />
+                                ) : (
+                                    <>
+                                        <Zap size={18} />
+                                        <span>
+                                            Settle {selectedOverdue.size} Installment{selectedOverdue.size > 1 ? 's' : ''} — {formatCurrency(
+                                                periodInfo?.overdueInstallments
+                                                    ?.filter(i => selectedOverdue.has(`${i.basePeriodNumber}.${i.collectionSequence}`))
+                                                    .reduce((sum, i) => sum + i.amountDue, 0) ?? 0
+                                            )}
+                                        </span>
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <button
+                                type="submit"
+                                disabled={submitting || !selectedSub || !amountPaid}
+                                className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-medium shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                {submitting ? (
+                                    <Loader2 className="animate-spin" size={24} />
+                                ) : (
+                                    <>
+                                        <span>Confirm Collection</span>
+                                        <ArrowRight size={20} />
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </>
                 )}
             </form>

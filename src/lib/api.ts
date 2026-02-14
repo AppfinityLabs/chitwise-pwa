@@ -102,6 +102,16 @@ export const collectionsApi = {
     },
     get: (id: string) => api<any>(`/api/collections/${id}`),
     create: (data: any) => api<any>('/api/collections', { method: 'POST', body: data }),
+    bulkCreate: (data: {
+        groupMemberId: string;
+        paymentMode: string;
+        remarks?: string;
+        installments: Array<{ basePeriodNumber: number }>;
+    }) => api<{
+        collections: any[];
+        totalSettled: number;
+        count: number;
+    }>('/api/collections/bulk', { method: 'POST', body: data }),
     update: (id: string, data: any) => api<any>(`/api/collections/${id}`, { method: 'PUT', body: data }),
     delete: (id: string) => api<any>(`/api/collections/${id}`, { method: 'DELETE' }),
     nextPeriod: (groupMemberId: string) =>
@@ -111,6 +121,16 @@ export const collectionsApi = {
             totalPeriods: number;
             collectionFactor: number;
             periods: Array<{ period: number; collected: number; total: number; isComplete: boolean }>;
+            // Member-centric fields
+            nextMemberInstallment?: number;
+            totalMemberInstallments?: number;
+            completedMemberInstallments?: number;
+            currentMemberInstallment?: number;
+            collectionPattern?: string;
+            // Overdue details
+            overdueInstallments?: Array<{ basePeriodNumber: number; collectionSequence: number; amountDue: number }>;
+            overdueTotal?: number;
+            overdueCount?: number;
         }>(`/api/collections/next-period?groupMemberId=${groupMemberId}`),
 };
 
